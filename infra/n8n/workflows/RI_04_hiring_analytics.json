@@ -15,7 +15,10 @@
       "name": "Nightly Schedule",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1,
-      "position": [100, 300]
+      "position": [
+        100,
+        300
+      ]
     },
     {
       "parameters": {
@@ -30,7 +33,10 @@
       "name": "Fetch Recruiter Jobs",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [300, 300]
+      "position": [
+        300,
+        300
+      ]
     },
     {
       "parameters": {
@@ -43,7 +49,10 @@
       "name": "Fetch Applications",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [500, 300]
+      "position": [
+        500,
+        300
+      ]
     },
     {
       "parameters": {
@@ -53,7 +62,10 @@
       "name": "Calculate Pipeline Metrics",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [700, 300]
+      "position": [
+        700,
+        300
+      ]
     },
     {
       "parameters": {
@@ -73,7 +85,10 @@
       "name": "Generate Trend Insight",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
@@ -88,7 +103,10 @@
       "name": "Update Cache",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [1100, 300]
+      "position": [
+        1100,
+        300
+      ]
     }
   ],
   "connections": {
@@ -147,5 +165,8 @@
         ]
       ]
     }
+  },
+  "settings": {
+    "errorWorkflow": "99_global_error_handler"
   }
 }

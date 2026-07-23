@@ -7,7 +7,10 @@
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [100, 300]
+      "position": [
+        100,
+        300
+      ]
     },
     {
       "parameters": {
@@ -22,7 +25,10 @@
       "name": "Fetch Student Profile",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [300, 200]
+      "position": [
+        300,
+        200
+      ]
     },
     {
       "parameters": {
@@ -35,7 +41,10 @@
       "name": "Fetch Open Jobs",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [300, 400]
+      "position": [
+        300,
+        400
+      ]
     },
     {
       "parameters": {
@@ -45,7 +54,10 @@
       "name": "Combine Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [500, 300]
+      "position": [
+        500,
+        300
+      ]
     },
     {
       "parameters": {
@@ -65,7 +77,10 @@
       "name": "Generate Matches",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1,
-      "position": [700, 300]
+      "position": [
+        700,
+        300
+      ]
     },
     {
       "parameters": {
@@ -75,7 +90,10 @@
       "name": "Split Matches",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
@@ -92,7 +110,10 @@
       "name": "Save Recommendations",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [1100, 300]
+      "position": [
+        1100,
+        300
+      ]
     }
   ],
   "connections": {
@@ -167,5 +188,8 @@
         ]
       ]
     }
+  },
+  "settings": {
+    "errorWorkflow": "99_global_error_handler"
   }
 }

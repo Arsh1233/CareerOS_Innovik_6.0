@@ -7,7 +7,10 @@
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [100, 300]
+      "position": [
+        100,
+        300
+      ]
     },
     {
       "parameters": {
@@ -23,7 +26,10 @@
       "name": "Fetch Chat History",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [300, 300]
+      "position": [
+        300,
+        300
+      ]
     },
     {
       "parameters": {
@@ -38,7 +44,10 @@
       "name": "Fetch Twin Context",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [500, 300]
+      "position": [
+        500,
+        300
+      ]
     },
     {
       "parameters": {
@@ -48,7 +57,10 @@
       "name": "Build Prompt Context",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [700, 300]
+      "position": [
+        700,
+        300
+      ]
     },
     {
       "parameters": {
@@ -73,7 +85,10 @@
       "name": "Gemini Conversational Agent",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
@@ -89,7 +104,10 @@
       "name": "Save Reply to DB",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [1100, 300]
+      "position": [
+        1100,
+        300
+      ]
     }
   ],
   "connections": {
@@ -148,5 +166,8 @@
         ]
       ]
     }
+  },
+  "settings": {
+    "errorWorkflow": "99_global_error_handler"
   }
 }

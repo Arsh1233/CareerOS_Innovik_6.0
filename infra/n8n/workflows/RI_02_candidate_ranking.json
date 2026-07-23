@@ -7,7 +7,10 @@
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [100, 300]
+      "position": [
+        100,
+        300
+      ]
     },
     {
       "parameters": {
@@ -22,7 +25,10 @@
       "name": "Fetch Job",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [300, 200]
+      "position": [
+        300,
+        200
+      ]
     },
     {
       "parameters": {
@@ -37,7 +43,10 @@
       "name": "Fetch Resume Profile",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [300, 400]
+      "position": [
+        300,
+        400
+      ]
     },
     {
       "parameters": {
@@ -47,7 +56,10 @@
       "name": "Combine Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [500, 300]
+      "position": [
+        500,
+        300
+      ]
     },
     {
       "parameters": {
@@ -67,7 +79,10 @@
       "name": "Generate Match Score",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1,
-      "position": [700, 300]
+      "position": [
+        700,
+        300
+      ]
     },
     {
       "parameters": {
@@ -83,7 +98,10 @@
       "name": "Update Application",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     }
   ],
   "connections": {
@@ -147,5 +165,8 @@
         ]
       ]
     }
+  },
+  "settings": {
+    "errorWorkflow": "99_global_error_handler"
   }
 }

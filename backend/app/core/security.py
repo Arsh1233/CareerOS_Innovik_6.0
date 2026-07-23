@@ -1,28 +1,26 @@
-import os
 import jwt
 from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import os
 from typing import Dict, Any
 
-# We use standard HTTPBearer to extract the token from the Authorization header
 security = HTTPBearer()
 
+# Supabase JWT Secret is required to locally verify tokens without network calls
 SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "super-secret-jwt-token-with-at-least-32-characters-long")
-ALGORITHM = "HS256"
 
 def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Security(security)) -> Dict[str, Any]:
     """
-    Verifies the Supabase JWT token.
-    Supabase signs its JWTs using HS256 and the project's JWT Secret.
+    Verifies the Supabase JWT access token.
+    Extracts the user ID and role from the payload.
     """
     token = credentials.credentials
     try:
-        # Decode and verify the JWT token
-        # audience is typically "authenticated" in Supabase
+        # Supabase uses HS256 algorithm
         payload = jwt.decode(
-            token, 
-            SUPABASE_JWT_SECRET, 
-            algorithms=[ALGORITHM], 
+            token,
+            SUPABASE_JWT_SECRET,
+            algorithms=["HS256"],
             audience="authenticated"
         )
         return payload
@@ -32,9 +30,9 @@ def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Security(securi
             detail="Token has expired",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except jwt.InvalidTokenError as e:
+    except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token: {str(e)}",
+            detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )

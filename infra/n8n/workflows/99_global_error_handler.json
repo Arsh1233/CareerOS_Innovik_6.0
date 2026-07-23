@@ -1,0 +1,53 @@
+{
+  "name": "99_global_error_handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "error-trigger-001",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": "public",
+        "table": "agent_tasks",
+        "updateKey": "id",
+        "updateValue": "={{ $json.execution.customData.task_id }}",
+        "columns": "status, updated_at",
+        "status": "FAILED",
+        "updated_at": "={{ new Date().toISOString() }}"
+      },
+      "id": "supabase-update-failed-002",
+      "name": "Update Task FAILED",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Update Task FAILED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "none"
+  }
+}

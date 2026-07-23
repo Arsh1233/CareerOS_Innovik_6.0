@@ -15,7 +15,10 @@
       "name": "Nightly Schedule",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1,
-      "position": [100, 300]
+      "position": [
+        100,
+        300
+      ]
     },
     {
       "parameters": {
@@ -28,7 +31,10 @@
       "name": "Fetch Recent Analytics",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [300, 300]
+      "position": [
+        300,
+        300
+      ]
     },
     {
       "parameters": {
@@ -48,7 +54,10 @@
       "name": "Predict Placement Rate",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1,
-      "position": [500, 300]
+      "position": [
+        500,
+        300
+      ]
     },
     {
       "parameters": {
@@ -63,7 +72,10 @@
       "name": "Update Analytics Cache",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [700, 300]
+      "position": [
+        700,
+        300
+      ]
     }
   ],
   "connections": {
@@ -100,5 +112,8 @@
         ]
       ]
     }
+  },
+  "settings": {
+    "errorWorkflow": "99_global_error_handler"
   }
 }

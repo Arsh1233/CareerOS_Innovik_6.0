@@ -105,7 +105,7 @@ interface RoleContextValue {
   config: RoleConfig
   setRole: (r: UserRole) => void
   isAuthenticated: boolean
-  signIn: (role: UserRole) => void
+  signIn: (role: UserRole, token?: string) => void
   signOut: () => void
 }
 
@@ -131,17 +131,22 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('careeros-role', r)
   }
 
-  const signIn = (role: UserRole) => {
+  const signIn = (role: UserRole, token?: string) => {
     setRoleState(role)
     setIsAuthenticated(true)
     localStorage.setItem('careeros-role', role)
     localStorage.setItem('careeros-authed', 'true')
+    if (token) {
+      localStorage.setItem('careeros_access_token', token)
+    }
   }
 
   const signOut = () => {
     setIsAuthenticated(false)
     localStorage.removeItem('careeros-authed')
     localStorage.removeItem('careeros-role')
+    localStorage.removeItem('careeros_access_token')
+    localStorage.removeItem('careeros_refresh_token')
     document.documentElement.removeAttribute('data-role')
   }
 

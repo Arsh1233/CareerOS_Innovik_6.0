@@ -5,14 +5,17 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "master-router",
-        "responseMode": "lastNode",
+        "responseMode": "onReceived",
         "options": {}
       },
       "id": "webhook-router-001",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [100, 300],
+      "position": [
+        100,
+        300
+      ],
       "webhookId": "careeros-master-webhook"
     },
     {
@@ -23,7 +26,10 @@
       "name": "Validate Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [300, 300]
+      "position": [
+        300,
+        300
+      ]
     },
     {
       "parameters": {
@@ -51,7 +57,10 @@
       "name": "Role Router",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
-      "position": [500, 300]
+      "position": [
+        500,
+        300
+      ]
     },
     {
       "parameters": {
@@ -61,7 +70,10 @@
       "name": "Student Intelligence",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [700, 100]
+      "position": [
+        700,
+        100
+      ]
     },
     {
       "parameters": {
@@ -71,7 +83,10 @@
       "name": "College Intelligence",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [700, 300]
+      "position": [
+        700,
+        300
+      ]
     },
     {
       "parameters": {
@@ -81,7 +96,10 @@
       "name": "Recruiter Intelligence",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [700, 500]
+      "position": [
+        700,
+        500
+      ]
     }
   ],
   "connections": {
@@ -132,5 +150,8 @@
         ]
       ]
     }
+  },
+  "settings": {
+    "errorWorkflow": "99_global_error_handler"
   }
 }

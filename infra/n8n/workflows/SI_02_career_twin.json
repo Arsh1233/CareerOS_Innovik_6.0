@@ -15,7 +15,10 @@
       "name": "Nightly Schedule",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1,
-      "position": [100, 300]
+      "position": [
+        100,
+        300
+      ]
     },
     {
       "parameters": {},
@@ -23,7 +26,10 @@
       "name": "Execute Workflow Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [100, 500]
+      "position": [
+        100,
+        500
+      ]
     },
     {
       "parameters": {
@@ -36,7 +42,10 @@
       "name": "Fetch Students",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [300, 400]
+      "position": [
+        300,
+        400
+      ]
     },
     {
       "parameters": {
@@ -46,7 +55,10 @@
       "name": "Prepare Context",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [500, 400]
+      "position": [
+        500,
+        400
+      ]
     },
     {
       "parameters": {
@@ -66,7 +78,10 @@
       "name": "Calculate Twin Metrics",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1,
-      "position": [700, 400]
+      "position": [
+        700,
+        400
+      ]
     },
     {
       "parameters": {
@@ -83,7 +98,37 @@
       "name": "Update Twin Database",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [900, 400]
+      "position": [
+        900,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 10
+      },
+      "id": "split-in-batches-001",
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 2,
+      "position": [
+        400,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-001",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        400
+      ]
     }
   ],
   "connections": {
@@ -113,7 +158,7 @@
       "main": [
         [
           {
-            "node": "Prepare Context",
+            "node": "Split In Batches",
             "type": "main",
             "index": 0
           }
@@ -141,6 +186,42 @@
           }
         ]
       ]
+    },
+    "Split In Batches": {
+      "main": [
+        [
+          {
+            "node": "Prepare Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Twin Database": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
+  },
+  "settings": {
+    "errorWorkflow": "99_global_error_handler"
   }
 }

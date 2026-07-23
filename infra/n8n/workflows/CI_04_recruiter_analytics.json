@@ -15,7 +15,10 @@
       "name": "Nightly Schedule",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1,
-      "position": [100, 300]
+      "position": [
+        100,
+        300
+      ]
     },
     {
       "parameters": {
@@ -28,7 +31,10 @@
       "name": "Fetch Applications",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [300, 200]
+      "position": [
+        300,
+        200
+      ]
     },
     {
       "parameters": {
@@ -41,7 +47,10 @@
       "name": "Fetch Interviews",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [300, 400]
+      "position": [
+        300,
+        400
+      ]
     },
     {
       "parameters": {
@@ -51,7 +60,10 @@
       "name": "Aggregate Activity",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [500, 300]
+      "position": [
+        500,
+        300
+      ]
     },
     {
       "parameters": {
@@ -66,7 +78,10 @@
       "name": "Update Analytics Cache",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [700, 300]
+      "position": [
+        700,
+        300
+      ]
     }
   ],
   "connections": {
@@ -119,5 +134,8 @@
         ]
       ]
     }
+  },
+  "settings": {
+    "errorWorkflow": "99_global_error_handler"
   }
 }

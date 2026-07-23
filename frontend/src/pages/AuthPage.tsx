@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate, Navigate, Link } from 'react-router-dom'
 import { useRole, ROLE_CONFIG } from '../context/RoleContext'
 import type { UserRole } from '../context/RoleContext'
+import { api } from '../api'
+import { useApi } from '../hooks/useApi'
 
 const ROLES_LIST: { value: UserRole; emoji: string; label: string; desc: string }[] = [
   { value: 'student',   emoji: '🎓', label: 'Student',     desc: 'Career development & job hunting' },
@@ -17,6 +19,26 @@ export default function AuthPage() {
   const [name, setName] = useState('')
   const { role, setRole, config, signIn, isAuthenticated } = useRole()
   const navigate = useNavigate()
+
+  const { request: loginReq, loading: loginLoading, error: loginError } = useApi(api.auth.login)
+  const { request: registerReq, loading: registerLoading, error: registerError } = useApi(api.auth.register)
+
+  const handleAuth = async () => {
+    try {
+      let res;
+      if (mode === 'login') {
+        res = await loginReq({ email, password });
+      } else {
+        res = await registerReq({ email, password, full_name: name, role });
+      }
+      // Use the returned role if available, otherwise fallback to the selected role
+      const assignedRole = res?.user?.role || role;
+      signIn(assignedRole, res?.access_token);
+      navigate(ROLE_CONFIG[assignedRole as UserRole].primaryPath);
+    } catch (e) {
+      // Error is handled by useApi and displayed below
+    }
+  }
 
   if (isAuthenticated) return <Navigate to={config.primaryPath} replace />
 
@@ -229,6 +251,12 @@ export default function AuthPage() {
 
           {/* Form */}
           <div className="flex flex-col gap-3">
+            {(loginError || registerError) && (
+              <div className="p-3 mb-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium">
+                {loginError || registerError}
+              </div>
+            )}
+
             {mode === 'signup' && (
               <div>
                 <label className="text-xs mb-1.5 block" style={{ fontFamily: "'Inter', sans-serif", color: 'var(--text-2)' }}>
@@ -309,11 +337,9 @@ export default function AuthPage() {
             )}
 
             <button
-              onClick={() => {
-                signIn(role)
-                navigate(config.primaryPath)
-              }}
-              className="w-full py-3 rounded-xl text-sm font-semibold text-center mt-2 transition-all duration-200 hover:scale-[1.02]"
+              onClick={handleAuth}
+              disabled={loginLoading || registerLoading}
+              className="w-full py-3 rounded-xl text-sm font-semibold text-center mt-2 transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
               style={{
                 background: `linear-gradient(135deg, ${config.color}, ${config.secondaryColor})`,
                 boxShadow: `0 0 24px ${config.color}40`,
@@ -321,7 +347,9 @@ export default function AuthPage() {
                 color: '#fff',
               }}
             >
-              {mode === 'login' ? `Sign In as ${config.label} →` : `Create ${config.label} Account →`}
+              {(loginLoading || registerLoading) 
+                ? 'Processing...' 
+                : (mode === 'login' ? `Sign In as ${config.label} →` : `Create ${config.label} Account →`)}
             </button>
           </div>
 
