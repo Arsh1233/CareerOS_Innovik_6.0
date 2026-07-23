@@ -1,0 +1,137 @@
+{
+  "name": "SI_05_Interview_Agent_ECHO",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger-001",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "schema": "public",
+        "table": "jobs",
+        "match": {
+          "id": "={{ $json.job_id }}"
+        }
+      },
+      "id": "supabase-fetch-job-002",
+      "name": "Fetch Job Description",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "model": "gemini-2.5-flash",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are ECHO, a strict technical interviewer for the role of {{ $json.job_title }}.\nEvaluate the user's transcript: {{ $json.audio_transcript }}\n\nGenerate the next interview question and a live score (0-100).\nReturn JSON:\n{\n  \"text_reply\": \"Next question...\",\n  \"current_score\": 85\n}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "gemini-interview-003",
+      "name": "Generate AI Response",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "elevenLabsApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.gemini_output.text_reply }}"
+            },
+            {
+              "name": "model_id",
+              "value": "eleven_monolingual_v1"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "elevenlabs-tts-004",
+      "name": "ElevenLabs TTS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    agent_audio: $items(\"ElevenLabs TTS\")[0].binary.data,\n    text_reply: $items(\"Generate AI Response\")[0].json.gemini_output.text_reply,\n    current_score: $items(\"Generate AI Response\")[0].json.gemini_output.current_score\n  }\n};"
+      },
+      "id": "code-format-response-005",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Job Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Job Description": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Response": {
+      "main": [
+        [
+          {
+            "node": "ElevenLabs TTS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ElevenLabs TTS": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

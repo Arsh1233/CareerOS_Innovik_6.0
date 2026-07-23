@@ -1,0 +1,99 @@
+{
+  "name": "SI_04_Roadmap_Agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger-001",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "schema": "public",
+        "table": "career_twins",
+        "match": {
+          "student_id": "={{ $json.student_id }}"
+        }
+      },
+      "id": "supabase-fetch-twin-002",
+      "name": "Fetch Career Twin",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "model": "gemini-2.5-flash",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are an Adaptive Learning AI.\nCareer Goal: {{ $json.career_goal }}\nSkill Gaps: {{ $json.skill_gaps }}\nInterview Performance: {{ $json.interview_score }}\n\nGenerate an adaptive roadmap to close the skill gaps. Return strict JSON:\n{\n  \"weekly_plan\": [\"Task 1\", \"Task 2\"],\n  \"monthly_plan\": [\"Milestone 1\"],\n  \"recommended_courses\": [\"Course A\"],\n  \"projects\": [\"Project Idea\"]\n}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "gemini-roadmap-003",
+      "name": "Generate Adaptive Roadmap",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": "public",
+        "table": "roadmaps",
+        "columns": "student_id, target_role, steps",
+        "student_id": "={{ $json.student_id }}",
+        "target_role": "={{ $json.career_goal }}",
+        "steps": "={{ $json.gemini_output }}"
+      },
+      "id": "supabase-save-roadmap-004",
+      "name": "Save Roadmap",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Career Twin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Career Twin": {
+      "main": [
+        [
+          {
+            "node": "Generate Adaptive Roadmap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Adaptive Roadmap": {
+      "main": [
+        [
+          {
+            "node": "Save Roadmap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "name": "00_CareerOS_Master_Router",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "master-router",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-router-001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300],
+      "webhookId": "careeros-master-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body;\nif (!body.user_id || !body.role || !body.action) {\n  throw new Error('Missing required fields: user_id, role, action');\n}\nreturn { json: { ...body, validated: true } };"
+      },
+      "id": "code-validate-002",
+      "name": "Validate Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.role }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "student",
+              "outputKey": "student"
+            },
+            {
+              "value2": "college",
+              "outputKey": "college"
+            },
+            {
+              "value2": "recruiter",
+              "outputKey": "recruiter"
+            }
+          ]
+        },
+        "fallbackOutput": 3
+      },
+      "id": "switch-role-003",
+      "name": "Role Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ $json.action }}"
+      },
+      "id": "exec-student-004",
+      "name": "Student Intelligence",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [700, 100]
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ $json.action }}"
+      },
+      "id": "exec-college-005",
+      "name": "College Intelligence",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ $json.action }}"
+      },
+      "id": "exec-recruiter-006",
+      "name": "Recruiter Intelligence",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [700, 500]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Request": {
+      "main": [
+        [
+          {
+            "node": "Role Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Role Router": {
+      "main": [
+        [
+          {
+            "node": "Student Intelligence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "College Intelligence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Recruiter Intelligence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

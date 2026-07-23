@@ -1,0 +1,171 @@
+{
+  "name": "SI_06_Job_Match_Agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger-001",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "schema": "public",
+        "table": "student_profiles",
+        "match": {
+          "id": "={{ $json.student_id }}"
+        }
+      },
+      "id": "supabase-fetch-student-002",
+      "name": "Fetch Student Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": "public",
+        "table": "jobs",
+        "limit": 100
+      },
+      "id": "supabase-fetch-jobs-003",
+      "name": "Fetch Open Jobs",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const student = $items(\"Fetch Student Profile\")[0].json;\nconst jobs = $items(\"Fetch Open Jobs\").map(i => i.json);\nreturn { json: { student: student, jobs: jobs } };"
+      },
+      "id": "code-combine-004",
+      "name": "Combine Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "model": "gemini-2.5-flash",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are an AI Job Matcher.\nStudent Skills: {{ $json.student.skills }}\nATS Score: {{ $json.student.ats_score }}\n\nAvailable Jobs:\n{{ JSON.stringify($json.jobs) }}\n\nReturn the top 3 jobs that best match the student's skills, along with a match score (0-100) for each.\nReturn strict JSON:\n{\n  \"matches\": [\n    { \"job_id\": \"uuid\", \"match_score\": 90, \"reason\": \"string\" }\n  ]\n}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "gemini-matcher-005",
+      "name": "Generate Matches",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $json.gemini_output.matches.map(match => ({ json: match }));"
+      },
+      "id": "code-split-matches-006",
+      "name": "Split Matches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": "public",
+        "table": "job_recommendations",
+        "columns": "student_id, job_id, match_score, reason",
+        "student_id": "={{ $items(\"Execute Workflow Trigger\")[0].json.student_id }}",
+        "job_id": "={{ $json.job_id }}",
+        "match_score": "={{ $json.match_score }}",
+        "reason": "={{ $json.reason }}"
+      },
+      "id": "supabase-save-matches-007",
+      "name": "Save Recommendations",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1100, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Student Profile",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Open Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Student Profile": {
+      "main": [
+        [
+          {
+            "node": "Combine Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Open Jobs": {
+      "main": [
+        [
+          {
+            "node": "Combine Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Matches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Matches": {
+      "main": [
+        [
+          {
+            "node": "Split Matches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Matches": {
+      "main": [
+        [
+          {
+            "node": "Save Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "name": "SI_02_Career_Twin",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 0
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-001",
+      "name": "Nightly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {},
+      "id": "execute-trigger-002",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [100, 500]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": "public",
+        "table": "student_profiles",
+        "limit": 100
+      },
+      "id": "supabase-fetch-students-003",
+      "name": "Fetch Students",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => ({\n  json: {\n    student_id: item.json.id,\n    skills: item.json.skills,\n    ats_score: item.json.ats_score\n  }\n}));"
+      },
+      "id": "code-prepare-data-004",
+      "name": "Prepare Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {
+        "model": "gemini-2.5-flash",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Act as a Predictive Career Modeler. Given the student's metrics:\nSkills: {{ $json.skills }}\nATS Score: {{ $json.ats_score }}\n\nCalculate:\n1. Readiness Score (0-100)\n2. Placement Probability (0-100%)\n3. Skill Gaps (Array of strings)\nReturn as strict JSON."
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "gemini-predict-005",
+      "name": "Calculate Twin Metrics",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1,
+      "position": [700, 400]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": "public",
+        "table": "career_twins",
+        "columns": "student_id, readiness_score, placement_probability, skill_gaps",
+        "student_id": "={{ $json.student_id }}",
+        "readiness_score": "={{ $json.gemini_output.readiness_score }}",
+        "placement_probability": "={{ $json.gemini_output.placement_probability }}",
+        "skill_gaps": "={{ $json.gemini_output.skill_gaps }}"
+      },
+      "id": "supabase-upsert-006",
+      "name": "Update Twin Database",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 400]
+    }
+  ],
+  "connections": {
+    "Nightly Schedule": {
+      "main": [
+        [
+          {
+            "node": "Fetch Students",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Students",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Students": {
+      "main": [
+        [
+          {
+            "node": "Prepare Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Context": {
+      "main": [
+        [
+          {
+            "node": "Calculate Twin Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Twin Metrics": {
+      "main": [
+        [
+          {
+            "node": "Update Twin Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

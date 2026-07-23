@@ -1,0 +1,151 @@
+{
+  "name": "RI_02_Candidate_Ranking",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger-001",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "schema": "public",
+        "table": "jobs",
+        "match": {
+          "id": "={{ $json.job_id }}"
+        }
+      },
+      "id": "supabase-fetch-job-002",
+      "name": "Fetch Job",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "schema": "public",
+        "table": "student_profiles",
+        "match": {
+          "id": "={{ $json.student_id }}"
+        }
+      },
+      "id": "supabase-fetch-student-003",
+      "name": "Fetch Resume Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "return { json: { job: $items(\"Fetch Job\")[0].json, student: $items(\"Fetch Resume Profile\")[0].json } };"
+      },
+      "id": "code-combine-004",
+      "name": "Combine Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "model": "gemini-2.5-flash",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Evaluate candidate match.\nJob Requirements: {{ JSON.stringify($json.job.requirements) }}\nStudent Skills: {{ JSON.stringify($json.student.skills) }}\nATS Score: {{ $json.student.ats_score }}\n\nCalculate a match score (0-100).\nReturn JSON:\n{\n  \"match_score\": 92,\n  \"reasoning\": \"Candidate has all core skills.\"\n}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "gemini-rank-005",
+      "name": "Generate Match Score",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": "public",
+        "table": "applications",
+        "updateKey": "id",
+        "updateValue": "={{ $items(\"Execute Workflow Trigger\")[0].json.application_id }}",
+        "columns": "match_score",
+        "match_score": "={{ $json.gemini_output.match_score }}"
+      },
+      "id": "supabase-update-app-006",
+      "name": "Update Application",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Job",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Resume Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Job": {
+      "main": [
+        [
+          {
+            "node": "Combine Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Resume Profile": {
+      "main": [
+        [
+          {
+            "node": "Combine Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Match Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Match Score": {
+      "main": [
+        [
+          {
+            "node": "Update Application",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

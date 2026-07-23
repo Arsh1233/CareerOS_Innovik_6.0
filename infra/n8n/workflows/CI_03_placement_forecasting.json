@@ -1,0 +1,104 @@
+{
+  "name": "CI_03_Placement_Forecasting",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 2
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-001",
+      "name": "Nightly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": "public",
+        "table": "college_analytics_cache",
+        "limit": 10
+      },
+      "id": "supabase-fetch-analytics-002",
+      "name": "Fetch Recent Analytics",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "model": "gemini-2.5-flash",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are an AI Economist.\nBased on the college's recent analytics: {{ JSON.stringify($json) }}\n\nPredict the placement rate for the current academic year.\nReturn strict JSON:\n{\n  \"forecasted_placement_rate\": 85.5,\n  \"confidence_interval\": \"80-90%\",\n  \"industry_trend_impact\": \"Positive\"\n}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "gemini-forecast-003",
+      "name": "Predict Placement Rate",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "public",
+        "table": "college_analytics_cache",
+        "columns": "metric_type, data",
+        "metric_type": "placement_forecast",
+        "data": "={{ JSON.stringify($json.gemini_output) }}"
+      },
+      "id": "supabase-save-forecast-004",
+      "name": "Update Analytics Cache",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Nightly Schedule": {
+      "main": [
+        [
+          {
+            "node": "Fetch Recent Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Recent Analytics": {
+      "main": [
+        [
+          {
+            "node": "Predict Placement Rate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Predict Placement Rate": {
+      "main": [
+        [
+          {
+            "node": "Update Analytics Cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

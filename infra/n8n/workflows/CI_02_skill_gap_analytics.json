@@ -1,0 +1,104 @@
+{
+  "name": "CI_02_Skill_Gap_Analytics",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-001",
+      "name": "Nightly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": "public",
+        "table": "career_twins",
+        "limit": 500
+      },
+      "id": "supabase-fetch-twins-002",
+      "name": "Fetch All Twins",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "model": "gemini-2.5-flash",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are an Education Analyst.\nAnalyze the following skill gaps across all students: {{ JSON.stringify($json) }}\n\nGenerate a department-wide skill gap heatmap.\nReturn strict JSON:\n{\n  \"top_missing_skills\": [\"React\", \"AWS\", \"Python\"],\n  \"industry_demand_mapping\": { \"AWS\": \"High\", \"React\": \"Medium\" }\n}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "gemini-analyze-gaps-003",
+      "name": "Analyze Skill Gaps",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "public",
+        "table": "college_analytics_cache",
+        "columns": "metric_type, data",
+        "metric_type": "skill_gaps",
+        "data": "={{ JSON.stringify($json.gemini_output) }}"
+      },
+      "id": "supabase-save-analytics-004",
+      "name": "Update Analytics Cache",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Nightly Schedule": {
+      "main": [
+        [
+          {
+            "node": "Fetch All Twins",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch All Twins": {
+      "main": [
+        [
+          {
+            "node": "Analyze Skill Gaps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Skill Gaps": {
+      "main": [
+        [
+          {
+            "node": "Update Analytics Cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

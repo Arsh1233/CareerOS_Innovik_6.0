@@ -1,0 +1,125 @@
+{
+  "name": "RI_03_Candidate_Summaries",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger-001",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "schema": "public",
+        "table": "student_profiles",
+        "match": {
+          "id": "={{ $json.student_id }}"
+        }
+      },
+      "id": "supabase-fetch-student-002",
+      "name": "Fetch Candidate Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "schema": "public",
+        "table": "career_twins",
+        "match": {
+          "student_id": "={{ $json.student_id }}"
+        }
+      },
+      "id": "supabase-fetch-twin-003",
+      "name": "Fetch Candidate Twin",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "model": "gemini-2.5-flash",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are an Executive Recruiter.\nProfile: {{ JSON.stringify($items(\"Fetch Candidate Profile\")[0].json) }}\nTwin Data: {{ JSON.stringify($items(\"Fetch Candidate Twin\")[0].json) }}\n\nWrite a 2-sentence executive summary of this candidate highlighting their biggest strengths and readiness. Return strict JSON:\n{\n  \"ai_summary\": \"A highly motivated software engineer with strong AWS skills and a 95% placement readiness score.\"\n}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "gemini-summary-004",
+      "name": "Generate Summary",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": "public",
+        "table": "student_profiles",
+        "updateKey": "id",
+        "updateValue": "={{ $items(\"Execute Workflow Trigger\")[0].json.student_id }}",
+        "columns": "ai_summary",
+        "ai_summary": "={{ $json.gemini_output.ai_summary }}"
+      },
+      "id": "supabase-update-summary-005",
+      "name": "Update Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Candidate Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Candidate Profile": {
+      "main": [
+        [
+          {
+            "node": "Fetch Candidate Twin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Candidate Twin": {
+      "main": [
+        [
+          {
+            "node": "Generate Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Summary": {
+      "main": [
+        [
+          {
+            "node": "Update Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

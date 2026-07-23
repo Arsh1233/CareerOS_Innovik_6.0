@@ -1,0 +1,152 @@
+{
+  "name": "SI_03_ARIA_Mentor",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger-001",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": "public",
+        "table": "chat_messages",
+        "filters": {
+          "session_id": "={{ $json.session_id }}"
+        },
+        "limit": 10
+      },
+      "id": "supabase-fetch-history-002",
+      "name": "Fetch Chat History",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "schema": "public",
+        "table": "career_twins",
+        "match": {
+          "student_id": "={{ $json.student_id }}"
+        }
+      },
+      "id": "supabase-fetch-twin-003",
+      "name": "Fetch Twin Context",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const messages = $items(\"Fetch Chat History\").map(i => i.json.role + ': ' + i.json.content).join('\\n');\nconst twin = $items(\"Fetch Twin Context\")[0].json;\nconst newMessage = $items(\"Execute Workflow Trigger\")[0].json.message;\nreturn { json: { history: messages, twin: twin, current_message: newMessage, student_id: twin.student_id, session_id: $items(\"Execute Workflow Trigger\")[0].json.session_id } };"
+      },
+      "id": "code-build-prompt-004",
+      "name": "Build Prompt Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "model": "gemini-2.5-flash",
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "message": "=You are ARIA, a personal AI Career Mentor.\nStudent Twin Context: Readiness Score: {{ $json.twin.readiness_score }}, Skill Gaps: {{ $json.twin.skill_gaps }}.\nChat History:\n{{ $json.history }}\n\nRespond to the user's latest message with actionable, supportive advice.\nReturn JSON:\n{\n  \"reply\": \"string\",\n  \"suggested_actions\": [\"string\"]\n}"
+            },
+            {
+              "role": "user",
+              "message": "={{ $json.current_message }}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "gemini-chat-005",
+      "name": "Gemini Conversational Agent",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "public",
+        "table": "chat_messages",
+        "columns": "session_id, role, content",
+        "session_id": "={{ $json.session_id }}",
+        "role": "agent",
+        "content": "={{ $json.gemini_output.reply }}"
+      },
+      "id": "supabase-save-reply-006",
+      "name": "Save Reply to DB",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1100, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Chat History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Chat History": {
+      "main": [
+        [
+          {
+            "node": "Fetch Twin Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Twin Context": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt Context": {
+      "main": [
+        [
+          {
+            "node": "Gemini Conversational Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Conversational Agent": {
+      "main": [
+        [
+          {
+            "node": "Save Reply to DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

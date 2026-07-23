@@ -1,0 +1,106 @@
+{
+  "name": "CI_05_At_Risk_Detection",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 1,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-001",
+      "name": "Nightly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": "public",
+        "table": "career_twins",
+        "filters": {
+          "readiness_score": {
+            "lt": 40
+          }
+        },
+        "limit": 100
+      },
+      "id": "supabase-fetch-at-risk-002",
+      "name": "Fetch At-Risk Twins",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const atRisk = $input.all();\nif (atRisk.length === 0) return [];\nconst message = `Alert: Detected ${atRisk.length} students with a readiness score below 40. Immediate mentor intervention recommended.`;\nreturn { json: { alert_message: message, count: atRisk.length } };"
+      },
+      "id": "code-format-alert-003",
+      "name": "Format Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "url": "https://hooks.slack.com/services/YOUR_WEBHOOK_URL",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.alert_message }}"
+            }
+          ]
+        }
+      },
+      "id": "slack-alert-004",
+      "name": "Send Slack Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Nightly Schedule": {
+      "main": [
+        [
+          {
+            "node": "Fetch At-Risk Twins",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch At-Risk Twins": {
+      "main": [
+        [
+          {
+            "node": "Format Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Alert": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

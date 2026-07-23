@@ -1,0 +1,151 @@
+{
+  "name": "RI_04_Hiring_Analytics",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 4
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-001",
+      "name": "Nightly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": "public",
+        "table": "jobs",
+        "filters": {
+          "recruiter_id": "={{ $json.recruiter_id }}"
+        }
+      },
+      "id": "supabase-fetch-jobs-002",
+      "name": "Fetch Recruiter Jobs",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": "public",
+        "table": "applications",
+        "limit": 500
+      },
+      "id": "supabase-fetch-apps-003",
+      "name": "Fetch Applications",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const jobs = $items(\"Fetch Recruiter Jobs\").map(i => i.json);\nconst apps = $items(\"Fetch Applications\").map(i => i.json);\n\n// Filter apps to just this recruiter's jobs\nconst jobIds = jobs.map(j => j.id);\nconst relevantApps = apps.filter(a => jobIds.includes(a.job_id));\n\nconst totalApps = relevantApps.length;\nconst hired = relevantApps.filter(a => a.status === 'hired').length;\nconst conversionRate = totalApps > 0 ? (hired / totalApps) * 100 : 0;\n\nreturn { json: { total_pipeline: totalApps, conversion_rate: conversionRate } };"
+      },
+      "id": "code-calc-metrics-004",
+      "name": "Calculate Pipeline Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "model": "gemini-2.5-flash",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Recruiter Analytics: {{ JSON.stringify($json) }}\n\nGenerate a brief text insight on their hiring trends.\nReturn JSON: { \"hiring_insight\": \"string\" }"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "gemini-insight-005",
+      "name": "Generate Trend Insight",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "public",
+        "table": "college_analytics_cache",
+        "columns": "metric_type, data",
+        "metric_type": "recruiter_specific_insight",
+        "data": "={{ JSON.stringify({ metrics: $items(\"Calculate Pipeline Metrics\")[0].json, insight: $json.gemini_output.hiring_insight }) }}"
+      },
+      "id": "supabase-save-analytics-006",
+      "name": "Update Cache",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1100, 300]
+    }
+  ],
+  "connections": {
+    "Nightly Schedule": {
+      "main": [
+        [
+          {
+            "node": "Fetch Recruiter Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Recruiter Jobs": {
+      "main": [
+        [
+          {
+            "node": "Fetch Applications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Applications": {
+      "main": [
+        [
+          {
+            "node": "Calculate Pipeline Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Pipeline Metrics": {
+      "main": [
+        [
+          {
+            "node": "Generate Trend Insight",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Trend Insight": {
+      "main": [
+        [
+          {
+            "node": "Update Cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

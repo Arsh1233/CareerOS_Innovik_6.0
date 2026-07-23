@@ -1,0 +1,108 @@
+{
+  "name": "RI_01_Talent_Search",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger-001",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-004",
+        "input": "={{ $json.semantic_query }}"
+      },
+      "id": "gemini-embed-002",
+      "name": "Generate Query Embedding",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "collection": "student_resumes",
+        "vector": "={{ $json.embedding }}",
+        "limit": 10
+      },
+      "id": "qdrant-search-003",
+      "name": "Vector Search",
+      "type": "n8n-nodes-base.qdrant",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": "public",
+        "table": "student_profiles",
+        "filters": {
+          "id": "={{ $json.metadata.student_id }}"
+        }
+      },
+      "id": "supabase-fetch-profiles-004",
+      "name": "Fetch Profile Data",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const searchResults = $items(\"Vector Search\");\nconst profiles = $items(\"Fetch Profile Data\");\n\nconst candidates = searchResults.map((result, idx) => {\n  const profile = profiles.find(p => p.json.id === result.json.metadata.student_id)?.json || {};\n  const qdrantScore = result.json.score || 0;\n  const atsScore = (profile.ats_score || 0) / 100;\n  const finalScore = (qdrantScore * 0.7) + (atsScore * 0.3);\n  \n  return {\n    json: {\n      student_id: profile.id,\n      skills: profile.skills,\n      qdrant_score: qdrantScore,\n      ats_score: atsScore * 100,\n      final_score: finalScore\n    }\n  };\n});\n\nreturn candidates.sort((a, b) => b.json.final_score - a.json.final_score);"
+      },
+      "id": "code-rank-candidates-005",
+      "name": "Normalize & Rank",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Query Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Query Embedding": {
+      "main": [
+        [
+          {
+            "node": "Vector Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Search": {
+      "main": [
+        [
+          {
+            "node": "Fetch Profile Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Profile Data": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Rank",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
