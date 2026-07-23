@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pydantic-settings
+langgraph
+google-genai
+PyJWT
+supabase

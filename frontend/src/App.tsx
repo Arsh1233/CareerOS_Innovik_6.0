@@ -15,6 +15,7 @@ const RecruiterPage = lazy(() => import('./pages/RecruiterPage'))
 const CollegePage = lazy(() => import('./pages/CollegePage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'))
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useRole()
@@ -62,6 +63,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LandingRedirect />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/career-twin" element={<ProtectedRoute><CareerTwinPage /></ProtectedRoute>} />
           <Route path="/mentor" element={<ProtectedRoute><MentorPage /></ProtectedRoute>} />
