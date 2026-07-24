@@ -17,6 +17,7 @@ from app.api.v1.career_twin import router as career_twin_router
 from app.api.v1.roadmaps.routes import router as roadmaps_router
 from app.api.v1.jobs.routes import router as jobs_router
 from app.api.v1.webhooks.n8n import router as n8n_webhooks_router
+from app.api.v1.mentor.routes import router as mentor_router
 
 app = FastAPI(
     title="CareerOS API Gateway",
@@ -52,3 +53,4 @@ app.include_router(career_twin_router, prefix="/api/v1/career_twin", tags=["Care
 app.include_router(roadmaps_router, prefix="/api/v1/roadmaps", tags=["Roadmaps"])
 app.include_router(jobs_router, prefix="/api/v1/jobs", tags=["Jobs & Applications"])
 app.include_router(n8n_webhooks_router, prefix="/api/v1/webhooks/n8n", tags=["Webhooks"])
+app.include_router(mentor_router, prefix="/api/v1/mentor", tags=["AI Mentor"])

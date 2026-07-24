@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, BackgroundTasks, status
+from fastapi import APIRouter, Depends, status
 from typing import Dict, Any
 from app.schemas.roadmaps import GenerateRoadmapRequest, RoadmapResponse
 from app.services.roadmaps import RoadmapService
@@ -7,20 +7,17 @@ from app.api.dependencies import RequireRole
 router = APIRouter()
 roadmap_service = RoadmapService()
 
-@router.post("/generate", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/generate", response_model=RoadmapResponse, status_code=status.HTTP_200_OK)
 async def generate_roadmap(
     request: GenerateRoadmapRequest,
-    background_tasks: BackgroundTasks,
     user: Dict[str, Any] = Depends(RequireRole(["student"]))
 ):
     """
-    Triggers the generation of a personalized career roadmap via the n8n agent.
-    Returns 202 Accepted immediately.
+    Generates a personalized career roadmap in real time using Gemini AI.
     """
-    return roadmap_service.trigger_roadmap_generation(
+    return await roadmap_service.generate_roadmap_with_ai(
         user_id=user["id"],
-        request=request,
-        background_tasks=background_tasks
+        request=request
     )
 
 @router.get("/me", response_model=RoadmapResponse)

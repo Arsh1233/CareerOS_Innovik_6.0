@@ -3,8 +3,8 @@ import { apiClient } from './client';
 export const studentsApi = {
   getDashboard: () => apiClient<any>('/students/me/dashboard', { method: 'GET' }),
   
-  getCareerTwin: () => apiClient<any>('/students/career_twin/me', { method: 'GET' }),
-  generateCareerTwin: () => apiClient<{ status: string }>('/students/career_twin/generate', { method: 'POST' }),
+  getCareerTwin: () => apiClient<any>('/career_twin/me', { method: 'GET' }),
+  generateCareerTwin: (data?: { target_role?: string }) => apiClient<any>('/career_twin/generate', { method: 'POST', data }),
   
   uploadResume: (file: File) => {
     const formData = new FormData();

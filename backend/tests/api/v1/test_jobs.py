@@ -4,6 +4,7 @@ from app.main import app
 import os
 from unittest.mock import patch, MagicMock
 from app.api.dependencies import get_current_user
+from app.services.jobs import JobsService
 
 # Create a mock for the get_current_user dependency
 async def mock_get_current_user():
@@ -19,12 +20,12 @@ def override_auth_dependency():
 @pytest.mark.asyncio
 async def test_trigger_job_recommendations():
     # Mock the JobsService dependency
-    with patch("app.api.v1.jobs.routes.JobsService") as mock_jobs_service_class, \
-         patch("app.api.v1.jobs.routes.dispatch_agent_task") as mock_dispatch:
+    with patch("app.api.v1.jobs.routes.dispatch_agent_task") as mock_dispatch:
         
-        # Setup mock JobsService
         mock_jobs_service = MagicMock()
-        mock_jobs_service_class.return_value = mock_jobs_service
+        
+        # Override FastAPI dependency
+        app.dependency_overrides[JobsService] = lambda: mock_jobs_service
         
         # Mock Supabase table calls
         mock_table = MagicMock()
@@ -68,38 +69,42 @@ async def test_trigger_job_recommendations():
             data = response.json()
             assert "Job recommendations generation started" in data["message"]
             assert data["status"] == "accepted"
+            
+        app.dependency_overrides.pop(JobsService, None)
 
 @pytest.mark.asyncio
 async def test_get_recommendations_success():
-    with patch("app.api.v1.jobs.routes.JobsService") as mock_jobs_service_class:
-        mock_jobs_service = MagicMock()
-        mock_jobs_service_class.return_value = mock_jobs_service
+    mock_jobs_service = MagicMock()
+    
+    app.dependency_overrides[JobsService] = lambda: mock_jobs_service
+    
+    from app.schemas.jobs import RecommendationsResponse, JobMatch
         
-        from app.schemas.jobs import RecommendationsResponse, JobMatch
-        
-        mock_jobs_service.get_my_recommendations.return_value = RecommendationsResponse(
-            student_id="test-user-id",
-            target_role="Software Engineer",
-            jobs=[
-                JobMatch(
-                    id="job1",
-                    job_id="ext_1",
-                    title="Frontend Developer",
-                    company="Tech Corp",
-                    location="Remote",
-                    match_score=95,
-                    match_reasons=["Knows React"],
-                    missing_skills=["GraphQL"],
-                    apply_url="https://example.com"
-                )
-            ]
-        )
+    mock_jobs_service.get_my_recommendations.return_value = RecommendationsResponse(
+        student_id="test-user-id",
+        target_role="Software Engineer",
+        jobs=[
+            JobMatch(
+                id="job1",
+                job_id="ext_1",
+                title="Frontend Developer",
+                company="Tech Corp",
+                location="Remote",
+                match_score=95,
+                match_reasons=["Knows React"],
+                missing_skills=["GraphQL"],
+                apply_url="https://example.com"
+            )
+        ]
+    )
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-            response = await ac.get("/api/v1/jobs/recommendations")
-            
-            assert response.status_code == 200
-            data = response.json()
-            assert data["student_id"] == "test-user-id"
-            assert len(data["jobs"]) == 1
-            assert data["jobs"][0]["title"] == "Frontend Developer"
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.get("/api/v1/jobs/recommendations")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["student_id"] == "test-user-id"
+        assert len(data["jobs"]) == 1
+        assert data["jobs"][0]["title"] == "Frontend Developer"
+        
+    app.dependency_overrides.pop(JobsService, None)

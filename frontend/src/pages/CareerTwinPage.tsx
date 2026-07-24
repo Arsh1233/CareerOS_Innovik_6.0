@@ -1,6 +1,19 @@
+import { useState, useEffect } from 'react'
 import { AppShell } from '../components/Layout'
+import { api } from '../api'
 
-const skills = [
+interface CareerTwinData {
+  readiness_score?: number
+  placement_probability?: number
+  strengths?: string[]
+  weaknesses?: string[]
+  recommended_roles?: string[]
+  roadmap_summary?: string
+  critical_skills_to_learn?: string[]
+  estimated_months_to_ready?: number
+}
+
+const defaultSkills = [
   { name: 'Python', level: 88, status: 'strong' },
   { name: 'Machine Learning', level: 74, status: 'good' },
   { name: 'System Design', level: 58, status: 'gap' },
@@ -9,14 +22,14 @@ const skills = [
   { name: 'LLM Engineering', level: 55, status: 'gap' },
 ]
 
-const missingSkills = [
+const defaultMissingSkills = [
   { name: 'Kubernetes', priority: 'High', time: '3 weeks' },
   { name: 'Ray/Distributed ML', priority: 'High', time: '4 weeks' },
   { name: 'Vector Databases', priority: 'Medium', time: '2 weeks' },
   { name: 'LangChain / LangGraph', priority: 'Medium', time: '2 weeks' },
 ]
 
-const careerProbabilities = [
+const defaultCareerProbabilities = [
   { role: 'AI Engineer', prob: 78, salary: '₹28-42 LPA', color: '#3B82F6' },
   { role: 'ML Researcher', prob: 61, salary: '₹32-55 LPA', color: '#8B5CF6' },
   { role: 'Data Scientist', prob: 84, salary: '₹18-32 LPA', color: '#06B6D4' },
@@ -24,23 +37,66 @@ const careerProbabilities = [
 ]
 
 export default function CareerTwinPage() {
+  const [twin, setTwin] = useState<CareerTwinData | null>(null)
+  const [generating, setGenerating] = useState(false)
+
+  useEffect(() => {
+    api.students.getCareerTwin()
+      .then(data => setTwin(data))
+      .catch(() => {
+        // Silently use defaults if not generated yet
+      })
+  }, [])
+
+  const handleGenerate = async () => {
+    setGenerating(true)
+    try {
+      const data = await api.students.generateCareerTwin()
+      setTwin(data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const score = twin?.readiness_score ? Math.round(twin.readiness_score) : 87
+  const months = twin?.estimated_months_to_ready ?? 14
+
   return (
     <AppShell>
       <div className="min-h-screen px-4 md:px-6 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <div className="inline-flex items-center gap-2 glass rounded-full px-3 py-1 mb-3 text-xs text-purple-400 border border-purple-500/20"
-              style={{ fontFamily: "'Inter', sans-serif" }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse-glow" />
-              Live Simulation
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+              <div className="inline-flex items-center gap-2 glass rounded-full px-3 py-1 mb-3 text-xs text-purple-400 border border-purple-500/20"
+                style={{ fontFamily: "'Inter', sans-serif" }}>
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse-glow" />
+                Live Simulation
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                Your <span className="gradient-text">Digital Career Twin</span>
+              </h1>
+              <p className="text-slate-400 text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
+                A holographic model of your career — skills, probabilities, and projections updated in real time.
+              </p>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Your <span className="gradient-text">Digital Career Twin</span>
-            </h1>
-            <p className="text-slate-400 text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
-              A holographic model of your career — skills, probabilities, and projections updated in real time.
-            </p>
+
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all disabled:opacity-50 flex items-center gap-2 self-start md:self-auto cursor-pointer"
+            >
+              {generating ? (
+                <>
+                  <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  Simulating AI...
+                </>
+              ) : (
+                '⚡ Re-Simulate Twin'
+              )}
+            </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
@@ -106,7 +162,7 @@ export default function CareerTwinPage() {
                   <circle cx="56" cy="56" r="48" fill="none" stroke="var(--border)" strokeWidth="8"/>
                   <circle cx="56" cy="56" r="48" fill="none" stroke="url(#scoreGrad)"
                     strokeWidth="8" strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 48 * 0.87} ${2 * Math.PI * 48}`}/>
+                    strokeDasharray={`${2 * Math.PI * 48 * (score / 100)} ${2 * Math.PI * 48}`}/>
                   <defs>
                     <linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="0">
                       <stop stopColor="#3B82F6"/>
@@ -115,7 +171,7 @@ export default function CareerTwinPage() {
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-bold text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>87%</span>
+                  <span className="text-2xl font-bold text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>{score}%</span>
                   <span className="text-xs text-slate-400" style={{ fontFamily: "'Inter', sans-serif" }}>Readiness</span>
                 </div>
               </div>
@@ -123,7 +179,7 @@ export default function CareerTwinPage() {
               {/* Quick stats */}
               <div className="w-full grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Time to Placement', val: '14 months' },
+                  { label: 'Time to Placement', val: `${months} months` },
                   { label: 'Salary Projection', val: '₹32 LPA' },
                   { label: 'Skills Mastered', val: '24 / 40' },
                   { label: 'Interview Score', val: '91%' },
@@ -145,7 +201,7 @@ export default function CareerTwinPage() {
                   Career Probability Map
                 </p>
                 <div className="grid grid-cols-2 gap-3">
-                  {careerProbabilities.map((c) => (
+                  {defaultCareerProbabilities.map((c) => (
                     <div key={c.role} className="rounded-xl p-4 relative overflow-hidden"
                       style={{ background: `${c.color}08`, border: `1px solid ${c.color}25` }}>
                       <div className="flex justify-between items-start mb-3">
@@ -171,7 +227,7 @@ export default function CareerTwinPage() {
                     Current Skills
                   </p>
                   <div className="flex flex-col gap-3">
-                    {skills.map((s) => (
+                    {defaultSkills.map((s) => (
                       <div key={s.name}>
                         <div className="flex justify-between mb-1">
                           <span className="text-xs text-slate-300" style={{ fontFamily: "'Inter', sans-serif" }}>{s.name}</span>
@@ -199,7 +255,7 @@ export default function CareerTwinPage() {
                     Missing Skills
                   </p>
                   <div className="flex flex-col gap-3">
-                    {missingSkills.map((s) => (
+                    {defaultMissingSkills.map((s) => (
                       <div key={s.name} className="flex items-center justify-between rounded-lg px-3 py-2.5"
                         style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.15)' }}>
                         <div>
