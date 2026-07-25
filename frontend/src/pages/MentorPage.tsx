@@ -1,16 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { AppShell } from '../components/Layout'
 import { mentorApi, type ChatMessage as ApiChatMessage } from '../api/mentor'
+import { useRole } from '../context/RoleContext'
 
 type Message = { role: 'user' | 'ai'; text: string; time: string }
-
-const initialMessages: Message[] = [
-  {
-    role: 'ai',
-    text: "Hey! I'm ARIA, your AI Career Mentor. I've analyzed your profile — you're on track but there are critical skills gaps blocking your high-paying tech path. What goal or question can I help you with today?",
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  },
-]
 
 const quickActions = [
   'Show my skill gaps',
@@ -40,11 +33,22 @@ function WaveBar({ delay }: { delay: number }) {
 }
 
 export default function MentorPage() {
+  const { userProfile } = useRole()
+  const firstName = userProfile?.fullName?.split(' ')[0] || 'there'
+
+  const initialMessages: Message[] = [
+    {
+      role: 'ai',
+      text: `Hey ${firstName}! I'm ARIA, your AI Career Mentor. I've loaded your profile context (${userProfile.degree || 'Tech Degree'}, Class of ${userProfile.graduationYear || '2026'} at ${userProfile.universityName || 'your university'}). What goal or question can I help you with today?`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
+  ]
+
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [isListening, setIsListening] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [, setError] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // Keep API-format history in sync
@@ -70,8 +74,8 @@ export default function MentorPage() {
     historyRef.current.push({ role: 'user', text: trimmed })
 
     try {
-      // Send message to Gemini Flash backend
-      const res = await mentorApi.chat(trimmed, historyRef.current.slice(0, -1))
+      // Send message to AI backend along with userProfile details (degree, year, etc.)
+      const res = await mentorApi.chat(trimmed, historyRef.current.slice(0, -1), userProfile)
       const replyText = res?.reply || "I'm analyzing your profile. Could you provide a bit more context?"
       const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
@@ -106,7 +110,7 @@ export default function MentorPage() {
 
       // Code block: ```...```
       if (line.trim().startsWith('```')) {
-        const lang = line.trim().slice(3)
+        line.trim().slice(3)
         const codeLines: string[] = []
         i++
         while (i < lines.length && !lines[i].trim().startsWith('```')) {
@@ -195,7 +199,7 @@ export default function MentorPage() {
               <li key={idx} className="flex flex-col gap-1">
                 <div className="flex items-start gap-2 text-sm leading-relaxed">
                   <span
-                    className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
+                    className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
                     style={{
                       background: 'rgba(59,130,246,0.15)',
                       color: '#93C5FD',
@@ -211,7 +215,7 @@ export default function MentorPage() {
                   <ul className="ml-7 flex flex-col gap-1">
                     {item.subs.map((sub, si) => (
                       <li key={si} className="flex items-start gap-2 text-sm leading-relaxed">
-                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0"
                           style={{ background: 'rgba(148,163,184,0.4)' }} />
                         <span style={{ color: 'rgba(203,213,225,0.85)' }}>{renderInline(sub)}</span>
                       </li>
@@ -236,7 +240,7 @@ export default function MentorPage() {
           <ul key={`ul-${i}`} className="my-1.5 flex flex-col gap-1 pl-1">
             {items.map((item, idx) => (
               <li key={idx} className="flex items-start gap-2 text-sm leading-relaxed">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0"
                   style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)' }} />
                 <span>{renderInline(item)}</span>
               </li>
@@ -314,7 +318,7 @@ export default function MentorPage() {
         >
           <div className="flex items-center gap-3 mb-6">
             <div
-              className="relative w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
               style={{
                 background: 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(139,92,246,0.3))',
                 border: '1px solid rgba(139,92,246,0.3)',
@@ -368,7 +372,7 @@ export default function MentorPage() {
             ].map((step) => (
               <div key={step.phase} className="flex items-center gap-3 pl-1">
                 <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 z-10"
+                  className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 z-10"
                   style={{
                     background: step.done
                       ? 'rgba(52,211,153,0.2)'
@@ -451,7 +455,7 @@ export default function MentorPage() {
               <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                 {msg.role === 'ai' && (
                   <div
-                    className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center"
+                    className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center"
                     style={{
                       background: 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(139,92,246,0.3))',
                       border: '1px solid rgba(139,92,246,0.3)',
@@ -493,7 +497,7 @@ export default function MentorPage() {
             {isTyping && (
               <div className="flex gap-3">
                 <div
-                  className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center"
+                  className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center"
                   style={{
                     background: 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(139,92,246,0.3))',
                     border: '1px solid rgba(139,92,246,0.3)',
@@ -527,7 +531,7 @@ export default function MentorPage() {
               <button
                 key={s}
                 onClick={() => sendMessage(s)}
-                className="text-xs px-3 py-1.5 rounded-full flex-shrink-0 transition-all duration-150 hover:scale-105 cursor-pointer"
+                className="text-xs px-3 py-1.5 rounded-full shrink-0 transition-all duration-150 hover:scale-105 cursor-pointer"
                 style={{
                   background: 'rgba(59,130,246,0.1)',
                   border: '1px solid rgba(59,130,246,0.25)',
@@ -554,7 +558,7 @@ export default function MentorPage() {
               <button
                 type="button"
                 onClick={() => setIsListening(!isListening)}
-                className="flex items-center gap-1 flex-shrink-0 transition-all cursor-pointer"
+                className="flex items-center gap-1 shrink-0 transition-all cursor-pointer"
                 style={{ color: isListening ? '#3B82F6' : 'rgba(148,163,184,0.5)' }}
               >
                 {isListening ? (
@@ -584,7 +588,7 @@ export default function MentorPage() {
               <button
                 type="submit"
                 disabled={!input.trim() || isTyping}
-                className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200 cursor-pointer disabled:opacity-50"
+                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 cursor-pointer disabled:opacity-50"
                 style={{
                   background: input.trim() ? 'linear-gradient(135deg, #3B82F6, #8B5CF6)' : 'var(--bg-surface-strong)',
                 }}

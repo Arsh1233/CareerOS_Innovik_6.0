@@ -1,48 +1,80 @@
 """
-Gemini 2.5 Flash client — wraps google-genai for use across all CareerOS agents.
+Groq AI client — wraps groq SDK for use across all CareerOS agents.
+Drop-in replacement for the Gemini client with the same generate() and chat() interface.
 """
 import os
+import time
+import logging
 from typing import List, Dict, Optional
-from google import genai
-from google.genai import types
+# pyrefly: ignore [missing-import]
+from groq import Groq
 
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+from dotenv import load_dotenv
 
-_client: Optional[genai.Client] = None
-
-
-def _get_client() -> genai.Client:
-    """Lazily initialises the Gemini client so import errors don't crash startup."""
-    global _client
-    if _client is None:
-        api_key = os.getenv("GOOGLE_API_KEY", "")
-        if not api_key:
-            raise RuntimeError(
-                "GOOGLE_API_KEY is not set. Add it to backend/.env to enable AI features."
-            )
-        _client = genai.Client(api_key=api_key)
-    return _client
+logger = logging.getLogger(__name__)
 
 
-MODEL = "gemini-flash-latest"
+def _get_client() -> Groq:
+    """Reads GROQ_API_KEY dynamically so new keys take effect immediately."""
+    load_dotenv(override=True)
+    api_key = os.getenv("GROQ_API_KEY", "").strip().strip('"').strip("'")
+    if not api_key:
+        raise RuntimeError(
+            "GROQ_API_KEY is not set. Add a valid Groq API key from https://console.groq.com/keys to backend/.env."
+        )
+    return Groq(api_key=api_key, timeout=15.0)
 
 
-def generate(prompt: str, system_instruction: str = "") -> str:
+FALLBACK_MODELS = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "gemma2-9b-it"]
+MAX_RETRIES = 2
+RETRY_DELAY = 5  # seconds
+
+
+def _is_retryable(err_msg: str) -> bool:
+    """Check if the error is retryable (rate limit, unavailable, etc.)."""
+    retryable = ["429", "503", "rate_limit", "RESOURCE_EXHAUSTED", "UNAVAILABLE", "overloaded"]
+    return any(code.lower() in err_msg.lower() for code in retryable)
+
+
+def generate(prompt: str, system_instruction: str = "", max_output_tokens: int = 4096) -> str:
     """
-    Single-turn generation. Returns the response text.
+    Single-turn generation with automatic model fallback and retry with backoff.
     """
     client = _get_client()
-    config = types.GenerateContentConfig(
-        system_instruction=system_instruction or None,
-        temperature=0.7,
-        max_output_tokens=2048,
-    )
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=prompt,
-        config=config,
-    )
-    return response.text or ""
+
+    messages = []
+    if system_instruction:
+        messages.append({"role": "system", "content": system_instruction})
+    messages.append({"role": "user", "content": prompt})
+
+    last_error = None
+    for attempt in range(MAX_RETRIES + 1):
+        for model_name in FALLBACK_MODELS:
+            try:
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=max_output_tokens,
+                )
+                text = response.choices[0].message.content
+                if text:
+                    return text
+            except Exception as e:
+                last_error = e
+                err_msg = str(e)
+                logger.warning(f"Model {model_name} failed (attempt {attempt+1}): {err_msg[:100]}")
+                if _is_retryable(err_msg):
+                    continue
+                raise e
+
+        if attempt < MAX_RETRIES:
+            logger.info(f"All models exhausted, waiting {RETRY_DELAY}s before retry {attempt+2}...")
+            time.sleep(RETRY_DELAY)
+
+    if last_error:
+        raise last_error
+    return ""
 
 
 def chat(
@@ -51,32 +83,49 @@ def chat(
     system_instruction: str = "",
 ) -> str:
     """
-    Multi-turn chat. `history` is a list of {"role": "user"|"model", "text": "..."} dicts.
-    Returns the model reply text.
+    Multi-turn chat with automatic model fallback and retry with backoff.
     """
     client = _get_client()
 
-    # Build contents list from history + new user message
-    contents: List[types.Content] = []
+    messages = []
+    if system_instruction:
+        messages.append({"role": "system", "content": system_instruction})
+
     for turn in history:
         role = turn.get("role", "user")
         text = turn.get("text", "")
-        contents.append(
-            types.Content(role=role, parts=[types.Part(text=text)])
-        )
-    # Append current message
-    contents.append(
-        types.Content(role="user", parts=[types.Part(text=message)])
-    )
+        # Map Gemini role names to OpenAI-compatible ones
+        if role == "model":
+            role = "assistant"
+        messages.append({"role": role, "content": text})
 
-    config = types.GenerateContentConfig(
-        system_instruction=system_instruction or None,
-        temperature=0.8,
-        max_output_tokens=2048,
-    )
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=contents,
-        config=config,
-    )
-    return response.text or ""
+    messages.append({"role": "user", "content": message})
+
+    last_error = None
+    for attempt in range(MAX_RETRIES + 1):
+        for model_name in FALLBACK_MODELS:
+            try:
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=messages,
+                    temperature=0.8,
+                    max_tokens=2048,
+                )
+                text = response.choices[0].message.content
+                if text:
+                    return text
+            except Exception as e:
+                last_error = e
+                err_msg = str(e)
+                logger.warning(f"Model {model_name} failed (attempt {attempt+1}): {err_msg[:100]}")
+                if _is_retryable(err_msg):
+                    continue
+                raise e
+
+        if attempt < MAX_RETRIES:
+            logger.info(f"All models exhausted, waiting {RETRY_DELAY}s before retry {attempt+2}...")
+            time.sleep(RETRY_DELAY)
+
+    if last_error:
+        raise last_error
+    return ""

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AppShell } from '../components/Layout'
-import { useJobs, STATUS_COLORS } from '../context/JobsContext'
+import { useJobs } from '../context/JobsContext'
 
 const departments = [
   { name: 'Computer Science', placed: 94, students: 120, color: '#3B82F6' },
@@ -79,6 +79,10 @@ export default function CollegePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { jobs, applications } = useJobs()
 
+  const [students, setStudents] = useState(studentData)
+  const [editingStudent, setEditingStudent] = useState<any | null>(null)
+  const [isNewStudent, setIsNewStudent] = useState(false)
+
   const activeTab = (searchParams.get('tab') ?? 'overview') as 'overview' | 'students' | 'placements' | 'departments' | 'recruiters'
 
   const tabs: { key: typeof activeTab; label: string }[] = [
@@ -89,10 +93,23 @@ export default function CollegePage() {
     { key: 'recruiters', label: 'Recruiters' },
   ]
 
-  const filteredStudents = studentData.filter((s) =>
+  const filteredStudents = students.filter((s) =>
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.branch.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  const handleSaveStudent = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingStudent) return
+    if (isNewStudent) {
+      const initials = editingStudent.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'ST'
+      setStudents(prev => [...prev, { ...editingStudent, avatar: initials, color: '#3B82F6', score: 85, studentId: `s_${Date.now()}` }])
+    } else {
+      setStudents(prev => prev.map(s => s.name === editingStudent.name || s.studentId === editingStudent.studentId ? editingStudent : s))
+    }
+    setEditingStudent(null)
+    setIsNewStudent(false)
+  }
 
   const getStudentDerivedStatus = (studentName: string) => {
     const apps = applications.filter(a => a.studentName === studentName)
@@ -254,7 +271,7 @@ export default function CollegePage() {
                       style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
                     >
                       <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0"
                         style={{ background: `${job.color}18`, color: job.color, border: `1px solid ${job.color}25`, fontFamily: "'Poppins', sans-serif" }}
                       >
                         {job.company[0]}
@@ -276,7 +293,7 @@ export default function CollegePage() {
                         {job.salary}
                       </span>
                       <button
-                        className="text-xs px-3 py-1.5 rounded-lg transition-all hover:scale-105 flex-shrink-0"
+                        className="text-xs px-3 py-1.5 rounded-lg transition-all hover:scale-105 shrink-0"
                         style={{ border: '1px solid var(--border)', color: 'var(--text-2)', fontFamily: "'Inter', sans-serif", background: 'transparent' }}
                       >
                         Forward to Students
@@ -307,29 +324,107 @@ export default function CollegePage() {
                   }}
                 />
                 <button
+                  onClick={() => {
+                    setIsNewStudent(true)
+                    setEditingStudent({ name: '', branch: 'CSE AI', year: '3rd Year', cgpa: '9.0', score: 88, color: '#3B82F6', skills: ['React', 'Python'] })
+                  }}
                   className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105"
-                  style={{ border: '1px solid var(--border)', color: 'var(--text-2)', fontFamily: "'Inter', sans-serif", background: 'transparent' }}
+                  style={{ border: '1px solid var(--border-accent)', color: '#34D399', fontFamily: "'Inter', sans-serif", background: 'rgba(52,211,153,0.1)' }}
                 >
-                  + Add Student
+                  + Add Enrolled Student
                 </button>
                 <div
                   className="flex items-center gap-2 text-xs ml-auto"
                   style={{ fontFamily: "'Inter', sans-serif", color: 'var(--text-3)' }}
                 >
-                  <span style={{ color: 'var(--text-1)', fontWeight: 600 }}>460</span> total
+                  <span style={{ color: 'var(--text-1)', fontWeight: 600 }}>{students.length}</span> total enrolled
                   <span className="mx-1" style={{ color: 'var(--border)' }}>·</span>
-                  <span style={{ color: '#34D399', fontWeight: 600 }}>432</span> active
-                  <span className="mx-1" style={{ color: 'var(--border)' }}>·</span>
-                  <span style={{ color: '#F59E0B', fontWeight: 600 }}>28</span> Alumni
+                  <span style={{ color: '#34D399', fontWeight: 600 }}>Real-time Sync Active</span>
                 </div>
               </div>
+
+              {/* Edit / Add Student Modal */}
+              {editingStudent && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                  <form onSubmit={handleSaveStudent} className="glass-card w-full max-w-md p-6 rounded-3xl space-y-4 text-left border border-emerald-500/30">
+                    <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--border)' }}>
+                      <h3 className="text-sm font-bold text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                        {isNewStudent ? '🎓 Add New Enrolled Student' : `✏️ Edit Student: ${editingStudent.name}`}
+                      </h3>
+                      <button type="button" onClick={() => setEditingStudent(null)} className="text-slate-400 hover:text-white">✕</button>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1">Student Full Name</label>
+                        <input
+                          type="text"
+                          value={editingStudent.name}
+                          onChange={e => setEditingStudent({ ...editingStudent, name: e.target.value })}
+                          required
+                          className="w-full px-3 py-2 rounded-xl text-xs bg-slate-900 border border-slate-800 text-white outline-none focus:border-emerald-500"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] text-slate-400 block mb-1">Branch / Major</label>
+                          <input
+                            type="text"
+                            value={editingStudent.branch}
+                            onChange={e => setEditingStudent({ ...editingStudent, branch: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl text-xs bg-slate-900 border border-slate-800 text-white outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] text-slate-400 block mb-1">Year / Batch</label>
+                          <input
+                            type="text"
+                            value={editingStudent.year}
+                            onChange={e => setEditingStudent({ ...editingStudent, year: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl text-xs bg-slate-900 border border-slate-800 text-white outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] text-slate-400 block mb-1">CGPA / GPA</label>
+                          <input
+                            type="text"
+                            value={editingStudent.cgpa}
+                            onChange={e => setEditingStudent({ ...editingStudent, cgpa: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl text-xs bg-slate-900 border border-slate-800 text-emerald-400 outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] text-slate-400 block mb-1">Career Score (%)</label>
+                          <input
+                            type="number"
+                            value={editingStudent.score}
+                            onChange={e => setEditingStudent({ ...editingStudent, score: Number(e.target.value) })}
+                            className="w-full px-3 py-2 rounded-xl text-xs bg-slate-900 border border-slate-800 text-blue-400 outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button type="button" onClick={() => setEditingStudent(null)} className="px-4 py-2 rounded-xl text-xs text-slate-300">
+                        Cancel
+                      </button>
+                      <button type="submit" className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500">
+                        💾 Save Student Details
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
 
               {/* Student cards grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                 {filteredStudents.map((student) => {
-                  const apps = applications.filter(a => a.studentName === student.name)
                   const derivedStatus = getStudentDerivedStatus(student.name)
-                  const dotStatuses = apps.slice(0, 4).map(a => a.status)
                   const radius = 16
                   const circumference = 2 * Math.PI * radius
                   const filled = circumference * (student.score / 100)
@@ -343,7 +438,7 @@ export default function CollegePage() {
                       {/* Avatar + name */}
                       <div className="flex items-start gap-3 mb-3">
                         <div
-                          className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
+                          className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
                           style={{
                             background: `linear-gradient(135deg, ${student.color}40, ${student.color}15)`,
                             color: student.color,
@@ -366,7 +461,7 @@ export default function CollegePage() {
                           <p className="text-xs mt-0.5" style={{ fontFamily: "'Inter', sans-serif", color: 'var(--text-2)' }}>{student.branch}</p>
                         </div>
                         {/* Mini ring */}
-                        <div className="relative flex-shrink-0" style={{ width: 40, height: 40 }}>
+                        <div className="relative shrink-0" style={{ width: 40, height: 40 }}>
                           <svg width="40" height="40" viewBox="0 0 40 40" style={{ transform: 'rotate(-90deg)' }}>
                             <circle cx="20" cy="20" r={radius} fill="none" stroke="var(--bg-surface-strong)" strokeWidth="4" />
                             <circle
@@ -401,33 +496,25 @@ export default function CollegePage() {
                         </span>
                       </div>
 
-                      {/* Application count + pipeline dots */}
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs" style={{ fontFamily: "'Inter', sans-serif", color: 'var(--text-3)' }}>
-                          {apps.length} application{apps.length !== 1 ? 's' : ''}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          {dotStatuses.map((st, idx) => (
-                            <div
-                              key={idx}
-                              className="w-2.5 h-2.5 rounded-full"
-                              title={st}
-                              style={{ background: STATUS_COLORS[st] }}
-                            />
-                          ))}
-                          {apps.length === 0 && (
-                            <span className="text-xs" style={{ color: 'var(--text-3)', fontFamily: "'Inter', sans-serif" }}>—</span>
-                          )}
-                        </div>
+                      {/* Action buttons */}
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <button
+                          onClick={() => {
+                            setIsNewStudent(false)
+                            setEditingStudent(student)
+                          }}
+                          className="text-xs py-1.5 rounded-lg transition-all border text-slate-300 hover:bg-white/5"
+                          style={{ borderColor: 'var(--border)' }}
+                        >
+                          ✏️ Edit Student
+                        </button>
+                        <button
+                          className="text-xs py-1.5 rounded-lg transition-all"
+                          style={{ border: `1px solid ${student.color}30`, color: student.color, fontFamily: "'Inter', sans-serif", background: 'transparent' }}
+                        >
+                          View Profile
+                        </button>
                       </div>
-
-                      {/* View profile */}
-                      <button
-                        className="w-full text-xs py-2 rounded-lg transition-all hover:scale-[1.02]"
-                        style={{ border: `1px solid ${student.color}30`, color: student.color, fontFamily: "'Inter', sans-serif", background: 'transparent' }}
-                      >
-                        View Full Profile
-                      </button>
                     </div>
                   )
                 })}
@@ -499,7 +586,7 @@ export default function CollegePage() {
                   {pipelineStages.map((stage, i) => (
                     <div key={stage.label} className="flex items-center">
                       <div
-                        className="flex flex-col items-center px-5 py-4 rounded-xl flex-shrink-0"
+                        className="flex flex-col items-center px-5 py-4 rounded-xl shrink-0"
                         style={{ background: `${stage.color}12`, border: `1px solid ${stage.color}25` }}
                       >
                         <span className="text-3xl font-bold" style={{ color: stage.color, fontFamily: "'Poppins', sans-serif" }}>
@@ -510,7 +597,7 @@ export default function CollegePage() {
                         </span>
                       </div>
                       {i < pipelineStages.length - 1 && (
-                        <span className="mx-1 text-lg flex-shrink-0" style={{ color: 'var(--text-3)' }}>→</span>
+                        <span className="mx-1 text-lg shrink-0" style={{ color: 'var(--text-3)' }}>→</span>
                       )}
                     </div>
                   ))}
@@ -716,7 +803,7 @@ export default function CollegePage() {
                     {topCompanies.map((c) => (
                       <div key={c.name} className="flex items-center gap-4">
                         <div
-                          className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
+                          className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
                           style={{ background: `${c.color}18`, color: c.color, border: `1px solid ${c.color}25`, fontFamily: "'Poppins', sans-serif" }}
                         >
                           {c.name[0]}

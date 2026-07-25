@@ -273,3 +273,14 @@ body {
 [data-theme='light'] .ambient-orb {
   opacity: var(--orb-opacity) !important;
 }
+
+/* ─── Select Options (Fix for Chromium Dark Theme Dropdowns) ──────────────── */
+select option {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+[data-theme='light'] select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}

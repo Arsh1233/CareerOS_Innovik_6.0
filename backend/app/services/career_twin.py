@@ -4,6 +4,8 @@ from supabase import create_client, Client
 from typing import Optional, Dict, Any, List
 from app.schemas.career_twin import CareerTwinResponse
 from app.services.ai import gemini
+from app.services.n8n_client import call_n8n_agent
+from app.schemas.n8n import TargetAgent
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://your-project.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "your-service-role-key")
@@ -70,8 +72,8 @@ class CareerTwinService:
 
     async def generate_with_ai(self, student_id: str, target_role: Optional[str] = None) -> Dict[str, Any]:
         """
-        Calls Gemini 2.5 Flash to generate a Career Twin report from the student's profile,
-        then saves the result to Supabase.
+        Routes Career Twin generation through n8n Career Twin agent
+        (with direct AI fallback if n8n is offline), then saves the result to Supabase.
         """
         # 1. Fetch student context
         context = await self.get_student_context(student_id)
@@ -89,16 +91,22 @@ class CareerTwinService:
 
         prompt = "\n".join(prompt_lines)
 
-        # 3. Call Gemini
-        raw = gemini.generate(prompt=prompt, system_instruction=CAREER_TWIN_SYSTEM_PROMPT)
-
-        # 4. Parse JSON response
-        try:
-            # Strip any accidental markdown fences
+        # Direct AI fallback function
+        async def _direct_ai_fallback():
+            raw = gemini.generate(prompt=prompt, system_instruction=CAREER_TWIN_SYSTEM_PROMPT)
             clean = raw.strip().strip("```json").strip("```").strip()
-            result = json.loads(clean)
-        except json.JSONDecodeError:
-            raise ValueError(f"AI returned invalid JSON. Raw response: {raw[:300]}")
+            return json.loads(clean)
+
+        # 3. Call n8n Agent
+        result = await call_n8n_agent(
+            target_agent=TargetAgent.CAREER_TWIN,
+            payload={
+                "student_id": student_id,
+                "target_role": target_role,
+                "prompt": prompt
+            },
+            fallback_fn=_direct_ai_fallback
+        )
 
         # 5. Persist to Supabase
         insert_data = {

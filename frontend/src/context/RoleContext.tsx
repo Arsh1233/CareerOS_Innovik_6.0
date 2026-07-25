@@ -100,12 +100,65 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
   },
 }
 
+export interface UserProfile {
+  fullName: string
+  email: string
+  universityName: string
+  universityEmail: string
+  phone: string
+  degree: string
+  graduationYear: string
+  cgpa: string
+  targetRole: string
+  githubUrl: string
+  leetcodeUrl: string
+  linkedinUrl: string
+  portfolioUrl: string
+  codeforcesHandle: string
+  bio: string
+}
+
+export const DEFAULT_USER_PROFILE: UserProfile = {
+  fullName: 'Arsh Chakraborty',
+  email: 'chakrabortyarsh3@gmail.com',
+  universityName: 'Indian Institute of Technology, Delhi',
+  universityEmail: 'arsh@iitd.ac.in',
+  phone: '+91 8269766043',
+  degree: 'B.Tech Computer Science & Engineering (AI)',
+  graduationYear: '2026',
+  cgpa: '8.9',
+  targetRole: 'Full Stack & AI Engineer',
+  githubUrl: 'https://github.com/Arsh1233',
+  leetcodeUrl: 'https://leetcode.com/Arsh1233',
+  linkedinUrl: 'https://linkedin.com/in/arsh1233',
+  portfolioUrl: 'https://arsh-portfolio.dev',
+  codeforcesHandle: 'arsh_master',
+  bio: 'Aspiring AI & Distributed Systems Engineer passionate about LLMs, web platforms, and high-performance algorithms.',
+}
+
+export function getInitials(name?: string, email?: string): string {
+  if (name && name.trim()) {
+    const parts = name.trim().split(/\s+/)
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return parts[0].slice(0, 2).toUpperCase()
+  }
+  if (email && email.trim()) {
+    return email.slice(0, 2).toUpperCase()
+  }
+  return 'AC'
+}
+
 interface RoleContextValue {
   role: UserRole
   config: RoleConfig
   setRole: (r: UserRole) => void
   isAuthenticated: boolean
-  signIn: (role: UserRole, token?: string) => void
+  userProfile: UserProfile
+  initials: string
+  updateUserProfile: (updates: Partial<UserProfile>) => void
+  signIn: (role: UserRole, token?: string, profile?: Partial<UserProfile>) => void
   signOut: () => void
 }
 
@@ -114,6 +167,9 @@ const RoleContext = createContext<RoleContextValue>({
   config: ROLE_CONFIG.student,
   setRole: () => {},
   isAuthenticated: false,
+  userProfile: DEFAULT_USER_PROFILE,
+  initials: 'AC',
+  updateUserProfile: () => {},
   signIn: () => {},
   signOut: () => {},
 })
@@ -125,19 +181,41 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() =>
     localStorage.getItem('careeros-authed') === 'true'
   )
+  const [userProfile, setUserProfileState] = useState<UserProfile>(() => {
+    const saved = localStorage.getItem('careeros-user-profile')
+    if (saved) {
+      try {
+        return { ...DEFAULT_USER_PROFILE, ...JSON.parse(saved) }
+      } catch {
+        return DEFAULT_USER_PROFILE
+      }
+    }
+    return DEFAULT_USER_PROFILE
+  })
 
   const setRole = (r: UserRole) => {
     setRoleState(r)
     localStorage.setItem('careeros-role', r)
   }
 
-  const signIn = (role: UserRole, token?: string) => {
+  const updateUserProfile = (updates: Partial<UserProfile>) => {
+    setUserProfileState(prev => {
+      const next = { ...prev, ...updates }
+      localStorage.setItem('careeros-user-profile', JSON.stringify(next))
+      return next
+    })
+  }
+
+  const signIn = (role: UserRole, token?: string, profile?: Partial<UserProfile>) => {
     setRoleState(role)
     setIsAuthenticated(true)
     localStorage.setItem('careeros-role', role)
     localStorage.setItem('careeros-authed', 'true')
     if (token) {
       localStorage.setItem('careeros_access_token', token)
+    }
+    if (profile) {
+      updateUserProfile(profile)
     }
   }
 
@@ -154,8 +232,20 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.setAttribute('data-role', role)
   }, [role])
 
+  const initials = getInitials(userProfile.fullName, userProfile.email)
+
   return (
-    <RoleContext.Provider value={{ role, config: ROLE_CONFIG[role], setRole, isAuthenticated, signIn, signOut }}>
+    <RoleContext.Provider value={{
+      role,
+      config: ROLE_CONFIG[role],
+      setRole,
+      isAuthenticated,
+      userProfile,
+      initials,
+      updateUserProfile,
+      signIn,
+      signOut
+    }}>
       {children}
     </RoleContext.Provider>
   )

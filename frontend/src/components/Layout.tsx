@@ -4,6 +4,12 @@ import { useTheme } from '../context/ThemeContext'
 import type { ThemeMode } from '../context/ThemeContext'
 import { useRole } from '../context/RoleContext'
 
+const notifications = [
+  { text: 'ARIA updated your roadmap', time: '2m ago', color: '#3B82F6' },
+  { text: 'New job match: Anthropic', time: '18m ago', color: '#8B5CF6' },
+  { text: 'Interview prep reminder', time: '1h ago', color: '#06B6D4' },
+]
+
 // ─── Particles ────────────────────────────────────────────────────────────────
 function Particles({ isDark, roleColor }: { isDark: boolean; roleColor: string }) {
   const particles = Array.from({ length: 18 }, (_, i) => ({
@@ -79,7 +85,7 @@ function ThemeToggle() {
           style={{ background: 'var(--bg-surface-strong)', border: '1px solid var(--border-accent)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
           {options.map((opt) => (
             <button key={opt.value} onClick={() => { setMode(opt.value); setOpen(false) }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors hover:bg-[var(--bg-hover)] text-left"
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors hover:bg-(--bg-hover) text-left"
               style={{
                 color: mode === opt.value ? '#3B82F6' : 'var(--text-2)',
                 background: mode === opt.value ? 'rgba(59,130,246,0.08)' : 'transparent',
@@ -104,8 +110,12 @@ function ThemeToggle() {
 export function Navbar({ transparent = false }: { transparent?: boolean }) {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+  const notifRef = useRef<HTMLDivElement>(null)
   const location = useLocation()
-  const { config, isAuthenticated, signOut } = useRole()
+  const { config, isAuthenticated, signOut, initials, userProfile } = useRole()
   const navigate = useNavigate()
 
   const handleSignOut = () => {
@@ -115,8 +125,20 @@ export function Navbar({ transparent = false }: { transparent?: boolean }) {
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserDropdownOpen(false)
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false)
+      }
+    }
     window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
   }, [])
 
   const isActive = (path: string) => {
@@ -143,7 +165,7 @@ export function Navbar({ transparent = false }: { transparent?: boolean }) {
       }}>
       <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
         {/* Logo */}
-        <Link to={isAuthenticated ? config.primaryPath : '/'} className="flex items-center gap-2 flex-shrink-0">
+        <Link to={isAuthenticated ? config.primaryPath : '/'} className="flex items-center gap-2 shrink-0">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center"
             style={{ background: `linear-gradient(135deg, ${accentColor}, ${config.secondaryColor})` }}>
             <svg width="15" height="15" viewBox="0 0 18 18" fill="none">
@@ -204,18 +226,122 @@ export function Navbar({ transparent = false }: { transparent?: boolean }) {
               <span>{config.emoji}</span>
               <span>{config.label}</span>
             </div>
+
+            {/* Notification bell */}
+            <div ref={notifRef} className="relative">
+              <button
+                onClick={() => setNotifOpen(!notifOpen)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200 hover:scale-105 cursor-pointer"
+                style={{ border: '1px solid var(--border-accent)' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M8 2a5 5 0 00-5 5v2l-1.5 2h13L13 9V7a5 5 0 00-5-5z"/>
+                  <path d="M6.5 13a1.5 1.5 0 003 0"/>
+                </svg>
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500" />
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 top-11 w-72 glass-strong rounded-xl overflow-hidden z-50 transition-all animate-in fade-in slide-in-from-top-2"
+                  style={{ backgroundColor: 'rgba(11, 15, 25, 0.95)', border: '1px solid var(--border-accent)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+                  <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+                    <p className="text-sm font-semibold text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>Notifications</p>
+                  </div>
+                  {notifications.map((n, i) => (
+                    <div key={i} className="flex items-start gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer">
+                      <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: n.color }} />
+                      <div>
+                        <p className="text-xs text-white" style={{ fontFamily: "'Inter', sans-serif" }}>{n.text}</p>
+                        <p className="text-xs text-slate-500 mt-0.5" style={{ fontFamily: "'Inter', sans-serif" }}>{n.time}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <ThemeToggle />
-            {/* Profile avatar */}
-            <Link to="/profile" className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold hover:scale-105 transition-transform"
-              style={{ background: `linear-gradient(135deg, ${accentColor}, ${config.secondaryColor})`, color: '#fff', fontFamily: "'Poppins', sans-serif" }}>
-              RS
-            </Link>
-            {/* Sign out */}
-            <button onClick={handleSignOut}
-              className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
-              style={{ color: 'var(--text-3)', fontFamily: "'Inter', sans-serif" }}>
-              Sign Out
-            </button>
+
+            {/* Profile Avatar with dynamic initials & dropdown menu */}
+            <div ref={userMenuRef} className="relative">
+              <button
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 hover:scale-105"
+                style={{
+                  background: `linear-gradient(135deg, ${accentColor}, ${config.secondaryColor})`,
+                  color: '#fff',
+                  fontFamily: "'Poppins', sans-serif",
+                  boxShadow: `0 0 16px ${accentColor}40`,
+                }}
+                title={userProfile.fullName || 'User Profile'}
+              >
+                {initials}
+              </button>
+
+              {userDropdownOpen && (
+                <div
+                  className="absolute right-0 top-11 w-72 glass-strong rounded-xl overflow-hidden z-50 transition-all animate-in fade-in slide-in-from-top-2"
+                  style={{
+                    backgroundColor: 'rgba(11, 15, 25, 0.95)',
+                    border: '1px solid var(--border-accent)',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                  }}
+                >
+                  <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0"
+                      style={{ background: `linear-gradient(135deg, ${accentColor}, ${config.secondaryColor})` }}
+                    >
+                      {initials}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-semibold truncate" style={{ color: 'white', fontFamily: "'Poppins', sans-serif" }}>
+                        {userProfile.fullName || 'User'}
+                      </span>
+                      <span className="text-[10px] truncate" style={{ color: 'var(--text-3)' }}>
+                        {userProfile.universityEmail || userProfile.email}
+                      </span>
+                      <span className="text-[9px] font-medium text-emerald-400 mt-0.5">
+                        🎓 {userProfile.universityName || 'IIT Delhi'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <Link
+                    to="/profile"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-xs transition-colors hover:bg-white/5"
+                    style={{ color: 'white', fontFamily: "'Inter', sans-serif" }}
+                  >
+                    👤 View My Profile
+                  </Link>
+
+                  <Link
+                    to="/profile?tab=details"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-xs transition-colors hover:bg-white/5"
+                    style={{ color: 'var(--text-2)', fontFamily: "'Inter', sans-serif" }}
+                  >
+                    🔗 GitHub & LeetCode Links
+                  </Link>
+
+                  <Link
+                    to="/onboarding"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-xs transition-colors hover:bg-white/5"
+                    style={{ color: 'var(--text-2)', fontFamily: "'Inter', sans-serif" }}
+                  >
+                    ⚙️ Re-run Onboarding
+                  </Link>
+
+                  <button
+                    onClick={() => { setUserDropdownOpen(false); handleSignOut() }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left"
+                    style={{ fontFamily: "'Inter', sans-serif" }}
+                  >
+                    🚪 Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="hidden lg:flex items-center gap-2">
@@ -274,7 +400,7 @@ export function Navbar({ transparent = false }: { transparent?: boolean }) {
                   <span>{config.label}</span>
                 </div>
                 <button onClick={() => { handleSignOut(); setMenuOpen(false) }}
-                  className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+                  className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-(--bg-hover)"
                   style={{ color: 'var(--text-3)', fontFamily: "'Inter', sans-serif" }}>
                   Sign Out
                 </button>

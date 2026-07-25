@@ -140,9 +140,9 @@ export default function AuthPage() {
       </div>
 
       {/* Right — auth card */}
-      <div className="flex-1 lg:max-w-lg flex items-center justify-center p-8 relative">
+      <div className="flex-1 lg:max-w-lg flex flex-col justify-center p-8 pt-16 relative">
         {/* Back to home */}
-        <Link to="/" className="absolute top-6 left-6 flex items-center gap-1.5 text-xs transition-colors hover:opacity-80"
+        <Link to="/" className="absolute top-6 left-6 md:left-8 flex items-center gap-1.5 text-xs transition-colors hover:opacity-80 z-10"
           style={{ color: 'var(--text-2)', fontFamily: "'Inter', sans-serif" }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M9 2L4 7l5 5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -150,7 +150,7 @@ export default function AuthPage() {
           Back to Home
         </Link>
 
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md mx-auto my-auto pt-6">
           {/* Logo (mobile) */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -176,7 +176,7 @@ export default function AuthPage() {
                     background: role === r.value ? `${ROLE_CONFIG[r.value].color}12` : 'var(--bg-surface)',
                     border: `1px solid ${role === r.value ? ROLE_CONFIG[r.value].color + '40' : 'var(--border)'}`,
                   }}>
-                  <span className="text-lg leading-none flex-shrink-0">{r.emoji}</span>
+                  <span className="text-lg leading-none shrink-0">{r.emoji}</span>
                   <div>
                     <p className="text-xs font-semibold" style={{
                       color: role === r.value ? ROLE_CONFIG[r.value].color : 'var(--text-1)',
@@ -185,7 +185,7 @@ export default function AuthPage() {
                     <p style={{ fontSize: '9px', color: 'var(--text-3)', fontFamily: "'Inter', sans-serif", lineHeight: 1.3 }}>{r.desc}</p>
                   </div>
                   {role === r.value && (
-                    <div className="ml-auto w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                    <div className="ml-auto w-4 h-4 rounded-full flex items-center justify-center shrink-0"
                       style={{ background: ROLE_CONFIG[r.value].color }}>
                       <svg width="7" height="7" viewBox="0 0 8 8" fill="none">
                         <path d="M1.5 4l1.5 1.5 3.5-3.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>

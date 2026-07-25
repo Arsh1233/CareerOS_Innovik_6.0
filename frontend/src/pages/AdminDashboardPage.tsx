@@ -275,7 +275,7 @@ export default function AdminDashboardPage() {
                       <div key={svc.name} className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <span
-                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            className="w-2 h-2 rounded-full shrink-0"
                             style={{ background: svc.status === 'ok' ? '#10B981' : '#F59E0B' }}
                           />
                           <span
@@ -285,7 +285,7 @@ export default function AdminDashboardPage() {
                             {svc.name}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <span
                             className="text-xs font-medium"
                             style={{ color: svc.status === 'ok' ? '#10B981' : '#F59E0B', fontFamily: "'Inter', sans-serif" }}
@@ -336,11 +336,11 @@ export default function AdminDashboardPage() {
                         className="flex items-center gap-4 py-2 rounded-xl px-3"
                         style={{ background: 'var(--bg-surface-strong)' }}
                       >
-                        <span className="text-xs w-14 flex-shrink-0" style={{ fontFamily: "'Inter', sans-serif", color: 'var(--text-3)' }}>
+                        <span className="text-xs w-14 shrink-0" style={{ fontFamily: "'Inter', sans-serif", color: 'var(--text-3)' }}>
                           {ev.time}
                         </span>
                         <span
-                          className="text-xs font-medium w-14 flex-shrink-0"
+                          className="text-xs font-medium w-14 shrink-0"
                           style={{ fontFamily: "'Inter', sans-serif", color: 'var(--text-2)' }}
                         >
                           {ev.actor}
@@ -349,7 +349,7 @@ export default function AdminDashboardPage() {
                           {ev.action}
                         </span>
                         <span
-                          className="text-xs px-2 py-0.5 rounded-full capitalize flex-shrink-0"
+                          className="text-xs px-2 py-0.5 rounded-full capitalize shrink-0"
                           style={{ background: badge.bg, color: badge.color, fontFamily: "'Inter', sans-serif" }}
                         >
                           {ev.severity}

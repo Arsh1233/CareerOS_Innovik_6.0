@@ -7,6 +7,8 @@ from fastapi import HTTPException
 from typing import Optional, List, Dict, Any
 from app.schemas.jobs import GenerateRecommendationsRequest, RecommendationsResponse, JobMatch
 from app.services.ai import gemini
+from app.services.n8n_client import call_n8n_agent
+from app.schemas.n8n import TargetAgent
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +44,8 @@ class JobsService:
 
     async def generate_recommendations_with_ai(self, user_id: str, target_role: str) -> RecommendationsResponse:
         """
-        Generates real-time AI job recommendations using Gemini Flash and saves to database.
+        Routes job recommendation generation through n8n Job Match agent
+        (with direct AI fallback if n8n is offline).
         """
         # Resolve student_id
         student_res = self.supabase.table("student_profiles").select("id").eq("user_id", user_id).execute()
@@ -56,39 +59,42 @@ class JobsService:
 
         prompt = f"Target Role: {target_role}\nRegion: India\nExperience: Entry-level / College Graduate"
 
-        raw = gemini.generate(prompt=prompt, system_instruction=JOB_RECOMMENDATION_SYSTEM_PROMPT)
-
-        try:
+        async def _direct_ai_fallback():
+            raw = gemini.generate(prompt=prompt, system_instruction=JOB_RECOMMENDATION_SYSTEM_PROMPT)
             clean = raw.strip().strip("```json").strip("```").strip()
-            jobs_data = json.loads(clean)
-        except json.JSONDecodeError:
-            jobs_data = [
+            return json.loads(clean)
+
+        # Call n8n Agent
+        try:
+            matches_data = await call_n8n_agent(
+                target_agent=TargetAgent.JOB_MATCH,
+                payload={
+                    "user_id": user_id,
+                    "student_id": student_id,
+                    "target_role": target_role,
+                    "prompt": prompt
+                },
+                fallback_fn=_direct_ai_fallback
+            )
+            if isinstance(matches_data, dict) and "matches" in matches_data:
+                matches_data = matches_data["matches"]
+        except Exception:
+            matches_data = [
                 {
-                    "id": str(uuid.uuid4())[:8],
+                    "id": str(uuid.uuid4()),
                     "job_id": str(uuid.uuid4()),
                     "title": f"Associate {target_role}",
                     "company": "Zepto",
                     "location": "Bengaluru, KA",
                     "match_score": 92,
-                    "match_reasons": ["Strong alignment in Python & AI stack", "Good problem-solving score"],
-                    "missing_skills": ["Kubernetes Deployment"],
-                    "apply_url": "https://careers.zepto.in"
-                },
-                {
-                    "id": str(uuid.uuid4())[:8],
-                    "job_id": str(uuid.uuid4()),
-                    "title": f"{target_role} - AI & Data",
-                    "company": "Swiggy",
-                    "location": "Bengaluru / Remote",
-                    "match_score": 85,
-                    "match_reasons": ["Solid ML fundamentals", "Product sense"],
-                    "missing_skills": ["Distributed Systems"],
-                    "apply_url": "https://careers.swiggy.com"
+                    "match_reasons": ["Strong match for requested target role", "High growth tech stack"],
+                    "missing_skills": ["Kubernetes", "MLOps"],
+                    "apply_url": "https://zepto.recruitee.com"
                 }
             ]
 
         matches = []
-        for j in jobs_data:
+        for j in matches_data:
             matches.append(
                 JobMatch(
                     id=str(j.get("id", str(uuid.uuid4())[:8])),

@@ -154,9 +154,9 @@ export default function RecruiterPage() {
                 </p>
                 <select
                   style={{ ...inputStyle, width: 'auto', padding: '4px 10px', fontSize: 12 }}>
-                  <option>Filter by Job</option>
+                  <option style={{ background: '#0f172a', color: '#e2e8f0' }}>Filter by Job</option>
                   {jobs.map(j => (
-                    <option key={j.id}>{j.title} — {j.company}</option>
+                    <option key={j.id} style={{ background: '#0f172a', color: '#e2e8f0' }}>{j.title} — {j.company}</option>
                   ))}
                 </select>
               </div>
@@ -173,7 +173,7 @@ export default function RecruiterPage() {
                       }}>
                       <div className="flex items-center justify-between mb-2.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0"
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
                             style={{ background: `${c.color}20`, color: c.color, border: `1px solid ${c.color}30`, fontFamily: "'Poppins', sans-serif" }}>
                             {c.avatar}
                           </div>
@@ -208,7 +208,7 @@ export default function RecruiterPage() {
                     <div className="glass rounded-2xl p-6 sticky top-20"
                       style={{ border: `1px solid ${candidates[selected].color}30` }}>
                       <div className="flex items-start gap-4 mb-6">
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold flex-shrink-0"
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold shrink-0"
                           style={{ background: `${candidates[selected].color}20`, color: candidates[selected].color, border: `1px solid ${candidates[selected].color}30`, fontFamily: "'Poppins', sans-serif" }}>
                           {candidates[selected].avatar}
                         </div>
@@ -311,7 +311,7 @@ export default function RecruiterPage() {
                       style={{ border: '1px solid var(--border)' }}>
                       {/* Avatar + title */}
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
                           style={{ background: `${job.color}20`, color: job.color, border: `1px solid ${job.color}30`, fontFamily: "'Poppins', sans-serif" }}>
                           {job.company[0]}
                         </div>
@@ -321,7 +321,7 @@ export default function RecruiterPage() {
                             {job.company} · {job.type} · {job.location}
                           </p>
                         </div>
-                        <span className="text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0"
+                        <span className="text-xs px-2.5 py-1 rounded-full font-medium shrink-0"
                           style={{ background: '#10B98115', color: '#10B981', border: '1px solid #10B98130', fontFamily: "'Inter', sans-serif" }}>
                           Active
                         </span>
@@ -435,7 +435,7 @@ export default function RecruiterPage() {
                             <div key={app.id} className="rounded-xl p-3"
                               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                               <div className="flex items-center gap-2.5 mb-2">
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
                                   style={{ background: `linear-gradient(135deg, ${scoreColor}30, ${scoreColor}15)`, color: scoreColor, fontFamily: "'Poppins', sans-serif" }}>
                                   {app.studentAvatar}
                                 </div>
@@ -443,7 +443,7 @@ export default function RecruiterPage() {
                                   <p className="text-xs font-semibold truncate" style={{ fontFamily: "'Poppins', sans-serif", color: 'var(--text-1)' }}>{app.studentName}</p>
                                   <p className="text-xs truncate" style={{ fontFamily: "'Inter', sans-serif", color: 'var(--text-2)' }}>{app.college} · {app.branch}</p>
                                 </div>
-                                <span className="text-xs font-bold flex-shrink-0"
+                                <span className="text-xs font-bold shrink-0"
                                   style={{ color: scoreColor, fontFamily: "'Poppins', sans-serif" }}>
                                   {app.matchScore}%
                                 </span>
@@ -519,7 +519,7 @@ export default function RecruiterPage() {
                       <div key={app.id} className="rounded-xl p-3"
                         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', opacity: 0.7 }}>
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
                             style={{ background: '#EF444415', color: '#EF4444', fontFamily: "'Poppins', sans-serif" }}>
                             {app.studentAvatar}
                           </div>
@@ -573,7 +573,7 @@ export default function RecruiterPage() {
                 ].map((c, i) => (
                   <div key={i} className="flex items-center justify-between mb-2.5">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c.color }} />
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />
                       <span className="text-xs" style={{ fontFamily: "'Inter', sans-serif", color: 'var(--text-2)' }}>{c.college}</span>
                     </div>
                     <span className="text-xs font-medium" style={{ fontFamily: "'Inter', sans-serif", color: 'var(--text-1)' }}>{c.count}</span>

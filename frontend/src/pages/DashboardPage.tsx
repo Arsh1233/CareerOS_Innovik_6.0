@@ -1,12 +1,6 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppShell } from '../components/Layout'
-
-const notifications = [
-  { text: 'ARIA updated your roadmap', time: '2m ago', color: '#3B82F6' },
-  { text: 'New job match: Anthropic', time: '18m ago', color: '#8B5CF6' },
-  { text: 'Interview prep reminder', time: '1h ago', color: '#06B6D4' },
-]
+import { useRole } from '../context/RoleContext'
 
 const weeklyGoals = [
   { label: 'Complete 3 DSA problems', done: true },
@@ -29,7 +23,18 @@ const timeline = [
 ]
 
 export default function DashboardPage() {
-  const [notifOpen, setNotifOpen] = useState(false)
+  const { userProfile } = useRole()
+
+  const now = new Date()
+  const formattedDate = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+  const hour = now.getHours()
+  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening'
+  const firstName = userProfile?.fullName ? userProfile.fullName.trim().split(' ')[0] : 'User'
 
   return (
     <AppShell>
@@ -39,52 +44,14 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between mb-8">
             <div>
               <p className="text-xs text-slate-500 mb-1" style={{ fontFamily: "'Inter', sans-serif" }}>
-                Monday, 21 July 2025
+                {formattedDate}
               </p>
               <h1 className="text-2xl md:text-3xl font-bold text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                Good Evening, <span className="gradient-text">Rahul</span>
+                {greeting}, <span className="gradient-text">{firstName}</span>
               </h1>
               <p className="text-slate-400 text-sm mt-1" style={{ fontFamily: "'Inter', sans-serif" }}>
                 Your AI team has been working — 3 updates since you last visited.
               </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Notification bell */}
-              <div className="relative">
-                <button
-                  onClick={() => setNotifOpen(!notifOpen)}
-                  className="w-9 h-9 glass rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-colors relative"
-                  style={{ border: '1px solid var(--border-accent)' }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M8 2a5 5 0 00-5 5v2l-1.5 2h13L13 9V7a5 5 0 00-5-5z"/>
-                    <path d="M6.5 13a1.5 1.5 0 003 0"/>
-                  </svg>
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500" />
-                </button>
-                {notifOpen && (
-                  <div className="absolute right-0 top-11 w-72 glass-strong rounded-xl overflow-hidden z-50"
-                    style={{ border: '1px solid var(--border-accent)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
-                    <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
-                      <p className="text-sm font-semibold text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>Notifications</p>
-                    </div>
-                    {notifications.map((n, i) => (
-                      <div key={i} className="flex items-start gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer">
-                        <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: n.color }} />
-                        <div>
-                          <p className="text-xs text-white" style={{ fontFamily: "'Inter', sans-serif" }}>{n.text}</p>
-                          <p className="text-xs text-slate-500 mt-0.5" style={{ fontFamily: "'Inter', sans-serif" }}>{n.time}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {/* Avatar */}
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold cursor-pointer"
-                style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)', fontFamily: "'Poppins', sans-serif" }}>
-                RS
-              </div>
             </div>
           </div>
 
@@ -120,11 +87,11 @@ export default function DashboardPage() {
             <div className="absolute inset-0 pointer-events-none"
               style={{ background: 'radial-gradient(circle at 80% 50%, rgba(139,92,246,0.08) 0%, transparent 60%)' }} />
             <div className="relative z-10 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                 style={{ background: 'rgba(139,92,246,0.25)', border: '1px solid rgba(139,92,246,0.3)' }}>
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <circle cx="9" cy="9" r="7" stroke="#8B5CF6" strokeWidth="1.5"/>
-                  <path d="M9 5v4l2.5 2.5" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="9" cy="9" r="7" stroke="#8B5CF6" strokeWidth="1.5" />
+                  <path d="M9 5v4l2.5 2.5" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </div>
               <div className="flex-1">
@@ -140,7 +107,7 @@ export default function DashboardPage() {
                 </p>
               </div>
               <Link to="/career-twin"
-                className="text-xs px-4 py-2 rounded-lg text-white flex-shrink-0 hidden md:block transition-all hover:scale-105"
+                className="text-xs px-4 py-2 rounded-lg text-white shrink-0 hidden md:block transition-all hover:scale-105"
                 style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)', fontFamily: "'Inter', sans-serif" }}>
                 View Career Twin
               </Link>
@@ -161,7 +128,7 @@ export default function DashboardPage() {
                 {weeklyGoals.map((goal, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
                       style={{
                         background: goal.done ? 'rgba(52,211,153,0.2)' : 'var(--bg-surface)',
                         border: `1px solid ${goal.done ? 'rgba(52,211,153,0.4)' : 'var(--border-accent)'}`,
@@ -169,7 +136,7 @@ export default function DashboardPage() {
                     >
                       {goal.done && (
                         <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                          <path d="M2 5l2.5 2.5L8 3" stroke="#34D399" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M2 5l2.5 2.5L8 3" stroke="#34D399" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       )}
                     </div>
@@ -232,7 +199,7 @@ export default function DashboardPage() {
                 <div className="absolute left-3.5 top-6 bottom-0 w-px" style={{ background: 'var(--border)' }} />
                 {timeline.map((item, i) => (
                   <div key={i} className="flex gap-3">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs flex-shrink-0 relative z-10"
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 relative z-10"
                       style={{ background: `${item.color}20`, border: `1px solid ${item.color}40`, color: item.color }}>
                       {item.icon}
                     </div>
@@ -260,7 +227,7 @@ export default function DashboardPage() {
                 <p className="text-sm font-semibold text-white mb-0.5" style={{ fontFamily: "'Poppins', sans-serif" }}>{card.label}</p>
                 <p className="text-xs text-slate-500" style={{ fontFamily: "'Inter', sans-serif" }}>{card.sub}</p>
                 <div className="mt-3 flex items-center gap-1 text-xs" style={{ color: card.color, fontFamily: "'Inter', sans-serif" }}>
-                  Open <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6h7M7 3.5l2.5 2.5L7 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Open <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6h7M7 3.5l2.5 2.5L7 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </div>
               </Link>
             ))}

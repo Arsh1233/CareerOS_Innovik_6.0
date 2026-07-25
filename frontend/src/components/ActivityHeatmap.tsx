@@ -154,9 +154,9 @@ export default function ActivityHeatmap({ label = 'activities' }: Props) {
             </div>
 
             {/* Cells */}
-            <div className="flex gap-[2px] relative">
+            <div className="flex gap-0.5 relative">
               {weeks.map((week, col) => (
-                <div key={col} className="flex flex-col gap-[2px]">
+                <div key={col} className="flex flex-col gap-0.5">
                   {Array.from({ length: 7 }).map((_, row) => {
                     const day = week[row] ?? null
                     const level = day ? intensityLevel(day.count) : -1

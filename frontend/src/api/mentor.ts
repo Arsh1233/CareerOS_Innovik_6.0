@@ -10,9 +10,9 @@ export interface MentorChatResponse {
 }
 
 export const mentorApi = {
-  chat: (message: string, history: ChatMessage[] = []) =>
+  chat: (message: string, history: ChatMessage[] = [], user_profile?: Record<string, any>) =>
     apiClient<MentorChatResponse>('/mentor/chat', {
       method: 'POST',
-      data: { message, history },
+      data: { message, history, user_profile },
     }),
 };

@@ -38,7 +38,6 @@ const defaultCareerProbabilities = [
 
 export default function CareerTwinPage() {
   const [twin, setTwin] = useState<CareerTwinData | null>(null)
-  const [generating, setGenerating] = useState(false)
 
   useEffect(() => {
     api.students.getCareerTwin()
@@ -47,18 +46,6 @@ export default function CareerTwinPage() {
         // Silently use defaults if not generated yet
       })
   }, [])
-
-  const handleGenerate = async () => {
-    setGenerating(true)
-    try {
-      const data = await api.students.generateCareerTwin()
-      setTwin(data)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setGenerating(false)
-    }
-  }
 
   const score = twin?.readiness_score ? Math.round(twin.readiness_score) : 87
   const months = twin?.estimated_months_to_ready ?? 14
@@ -83,20 +70,6 @@ export default function CareerTwinPage() {
               </p>
             </div>
 
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all disabled:opacity-50 flex items-center gap-2 self-start md:self-auto cursor-pointer"
-            >
-              {generating ? (
-                <>
-                  <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  Simulating AI...
-                </>
-              ) : (
-                '⚡ Re-Simulate Twin'
-              )}
-            </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
