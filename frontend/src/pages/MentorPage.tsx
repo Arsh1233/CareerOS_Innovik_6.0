@@ -6,18 +6,19 @@ import { useRole } from '../context/RoleContext'
 type Message = { role: 'user' | 'ai'; text: string; time: string }
 
 const quickActions = [
-  'Show my skill gaps',
-  'Build a 6-month plan',
-  'Find matching jobs',
-  'Improve my resume',
-  'Mock interview tips',
-  'Salary benchmarks',
+  'Audit my skills for target role',
+  '6-Month High-Pay Placement Roadmap',
+  'ATS Resume Audit & Key Keywords',
+  'Tier-1 Referral & LinkedIn Strategy',
+  'Mock Technical Interview Question',
+  'Salary Benchmarks (in ₹ LPA)',
 ]
 
 const suggestions = [
-  'What skills should I focus on this month?',
-  'Which companies are hiring AI engineers in India?',
-  'How do I prepare for System Design interviews?',
+  'What 5 projects will get me hired as an AI Engineer in India?',
+  'How do I prepare for System Design & Coding Rounds in 3 months?',
+  'What is the expected salary (LPA) for my target role & batch year?',
+  'How do I get off-campus referrals at Google, Microsoft, and top startups?',
 ]
 
 function WaveBar({ delay }: { delay: number }) {
@@ -85,7 +86,7 @@ export default function MentorPage() {
       console.error("Mentor chat error:", e)
       const errMsg = e?.message || 'Connecting to Gemini AI...'
       setError(errMsg)
-      
+
       const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       setMessages((prev) => [
         ...prev,
@@ -377,15 +378,14 @@ export default function MentorPage() {
                     background: step.done
                       ? 'rgba(52,211,153,0.2)'
                       : step.active
-                      ? 'rgba(59,130,246,0.2)'
-                      : 'var(--bg-surface)',
-                    border: `1px solid ${
-                      step.done
+                        ? 'rgba(59,130,246,0.2)'
+                        : 'var(--bg-surface)',
+                    border: `1px solid ${step.done
                         ? 'rgba(52,211,153,0.4)'
                         : step.active
-                        ? 'rgba(59,130,246,0.4)'
-                        : 'var(--input-border)'
-                    }`,
+                          ? 'rgba(59,130,246,0.4)'
+                          : 'var(--input-border)'
+                      }`,
                   }}
                 >
                   {step.done ? (

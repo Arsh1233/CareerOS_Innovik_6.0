@@ -163,7 +163,7 @@ export function Navbar({ transparent = false }: { transparent?: boolean }) {
         backdropFilter: showBg ? 'blur(24px)' : 'none',
         borderBottom: showBg ? '1px solid var(--border)' : 'none',
       }}>
-      <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
+      <div className="w-full px-4 md:px-6 h-14 flex items-center justify-between">
         {/* Logo */}
         <Link to={isAuthenticated ? config.primaryPath : '/'} className="flex items-center gap-2 shrink-0">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center"
